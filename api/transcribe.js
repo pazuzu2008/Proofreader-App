@@ -1,7 +1,4 @@
 // api/transcribe.js — Groq Whisper transcription endpoint
-// Accepts: multipart/form-data with an "audio" field (webm/mp4/wav/ogg)
-// Returns: { text: "transcribed text" }
-
 export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
@@ -11,14 +8,13 @@ export default async function handler(req, res) {
   if (!groqKey) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
 
   try {
-    // Read raw body and forward as multipart to Groq
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const bodyBuffer = Buffer.concat(chunks);
-
-    // Extract content-type (includes boundary for multipart)
     const contentType = req.headers['content-type'];
 
+    // Parse language from multipart if present, then rebuild form for Groq
+    // We pass through the entire body as-is — language field is already in the FormData
     const groqRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
       headers: {

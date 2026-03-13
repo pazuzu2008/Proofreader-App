@@ -38,7 +38,7 @@
     .icon-btn:hover{color:var(--text);background:var(--surface);}
     .icon-btn.active{color:var(--text);background:var(--surface2);}
     .settings-panel{background:var(--settings-bg);border-bottom:1px solid var(--border);overflow:hidden;max-height:0;transition:max-height 0.25s ease,padding 0.25s ease;flex-shrink:0;}
-    .settings-panel.open{max-height:220px;padding:14px 20px;}
+    .settings-panel.open{max-height:400px;padding:14px 20px;}
     .settings-grid{display:flex;flex-direction:column;gap:10px;}
     .settings-row{display:flex;align-items:center;gap:10px;}
     .settings-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;width:90px;flex-shrink:0;}
@@ -103,11 +103,48 @@
     .send-btn:disabled{opacity:0.25;cursor:not-allowed;}
     .send-btn:not(:disabled):hover{opacity:0.85;}
     .send-btn:not(:disabled):active{transform:scale(0.93);}
-    .mic-btn{width:34px;height:34px;border-radius:9px;background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
-    .mic-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--text-muted);}
-    .mic-btn.recording{background:#ef4444;border-color:#ef4444;color:#fff;animation:pulse 1s infinite;}
+    /* ── Mic button ── */
+    .mic-btn{
+      width:34px;height:34px;border-radius:50%;
+      background:none;border:none;color:var(--text-muted);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:color 0.15s,transform 0.15s;flex-shrink:0;
+      touch-action:none;user-select:none;-webkit-user-select:none;
+      position:relative;
+    }
+    .mic-btn:hover{color:var(--text);}
+    .mic-btn.recording{color:#ef4444;}
+    .mic-btn.locked{color:#ef4444;}
     .mic-btn:disabled{opacity:0.3;cursor:not-allowed;}
-    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4);}50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}}
+    /* ripple ring when recording */
+    .mic-btn.recording::before,.mic-btn.locked::before{
+      content:'';position:absolute;inset:-6px;border-radius:50%;
+      border:1.5px solid rgba(239,68,68,0.4);
+      animation:mic-ring 1.2s ease-out infinite;
+    }
+    .mic-btn.recording::after,.mic-btn.locked::after{
+      content:'';position:absolute;inset:-12px;border-radius:50%;
+      border:1px solid rgba(239,68,68,0.2);
+      animation:mic-ring 1.2s ease-out infinite 0.3s;
+    }
+    @keyframes mic-ring{
+      0%{transform:scale(0.85);opacity:0.8;}
+      100%{transform:scale(1.2);opacity:0;}
+    }
+    /* lock indicator pill */
+    .mic-lock-hint{
+      position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:20px;padding:5px 10px;font-size:11px;color:var(--text-muted);
+      white-space:nowrap;pointer-events:none;opacity:0;
+      transition:opacity 0.15s;
+    }
+    .mic-btn.recording .mic-lock-hint{opacity:1;}
+    .mic-btn.locked .mic-lock-hint{opacity:0;}
+    /* transcribing spinner */
+    .mic-btn.transcribing{color:var(--text-muted);}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .input-hint{text-align:center;font-size:10px;color:var(--text-muted);margin-top:6px;opacity:0.45;letter-spacing:0.01em;}
   </style>
 </head>
 <body>
@@ -163,10 +200,13 @@
             <input type="file" accept=".docx,.pdf" id="file-input" style="display:none">
           </label>
         </div>
-        <button class="mic-btn" id="mic-btn" title="Voice input">
-          <svg id="mic-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+        <button class="mic-btn" id="mic-btn" title="Hold to record">
+          <span class="mic-lock-hint">↑ Slide up to lock</span>
+          <svg id="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="13" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="9" y1="22" x2="15" y2="22"/>
           </svg>
         </button>
         <button class="send-btn" id="send-btn" disabled title="Send">
@@ -428,85 +468,126 @@
     }
   });
 
-  // ── Voice input ───────────────────────────────────────────
+  // ── Voice input (Telegram-style hold-to-record) ───────────
   const micBtn = document.getElementById('mic-btn');
+  const MIC_ICON = `<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>`;
+  const SPIN_ICON = `<circle cx="12" cy="12" r="9" stroke-dasharray="28 56" stroke-width="1.7" style="transform-origin:center;animation:spin 0.8s linear infinite"/>`;
+
   let mediaRecorder = null;
-  let audioChunks = [];
-  let isRecording = false;
+  let audioChunks   = [];
+  let isRecording   = false;
+  let isLocked      = false;
+  let micStream     = null;
+  let holdStartY    = 0;
+  const LOCK_THRESHOLD = 60; // px drag up to lock
 
-  micBtn.addEventListener('click', async () => {
-    if (isRecording) {
-      // Stop recording
-      mediaRecorder.stop();
-      return;
-    }
+  const MIC_SVG_ATTRS = `width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  function setMicIcon(html){
+    document.getElementById('mic-icon').innerHTML = html;
+  }
 
-      // Pick best supported format
+  async function startRecording(){
+    if(isRecording) return;
+    try{
+      micStream = await navigator.mediaDevices.getUserMedia({audio:true});
       const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4']
-        .find(t => MediaRecorder.isTypeSupported(t)) || '';
-
-      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+        .find(t=>MediaRecorder.isTypeSupported(t)) || '';
+      mediaRecorder = new MediaRecorder(micStream, mimeType?{mimeType}:{});
       audioChunks = [];
-
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-
-      mediaRecorder.onstop = async () => {
-        isRecording = false;
-        stream.getTracks().forEach(t => t.stop());
-        micBtn.classList.remove('recording');
-        micBtn.disabled = true;
-        micBtn.title = 'Transcribing…';
-        document.getElementById('mic-icon').innerHTML = `
-          <circle cx="12" cy="12" r="3" fill="currentColor"/>
-          <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 2"/>`;
-
-        try {
-          const ext = (mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm');
-          const blob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-          const formData = new FormData();
-          formData.append('file', blob, `audio.${ext}`);
-          formData.append('model', 'whisper-large-v3');
-          // Let Whisper auto-detect language (works great for EN/RU/UK)
-
-          const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Transcription failed');
-
-          if (data.text) {
-            const cur = els.input.value;
-            els.input.value = cur ? cur + ' ' + data.text : data.text;
-            autoResize(els.input);
-            els.sendBtn.disabled = false;
-            els.input.focus();
-          }
-        } catch (err) {
-          alert('Transcription error: ' + err.message);
-        } finally {
-          micBtn.disabled = false;
-          micBtn.title = 'Voice input';
-          document.getElementById('mic-icon').innerHTML = `
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`;
-        }
-      };
-
+      mediaRecorder.ondataavailable = e=>{if(e.data.size>0)audioChunks.push(e.data);};
+      mediaRecorder.onstop = ()=>handleRecordingDone(mimeType);
       mediaRecorder.start();
       isRecording = true;
       micBtn.classList.add('recording');
-      micBtn.title = 'Stop recording';
-      document.getElementById('mic-icon').innerHTML = `
-        <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>`;
+    }catch(err){
+      if(err.name==='NotAllowedError') alert('Microphone access denied. Please allow it in your browser settings.');
+      else alert('Could not start recording: '+err.message);
+    }
+  }
 
-    } catch (err) {
-      if (err.name === 'NotAllowedError') alert('Microphone permission denied. Please allow mic access in your browser.');
-      else alert('Could not start recording: ' + err.message);
+  function stopRecording(){
+    if(!isRecording||!mediaRecorder) return;
+    mediaRecorder.stop();
+    micStream?.getTracks().forEach(t=>t.stop());
+    isRecording = false;
+    isLocked    = false;
+    micBtn.classList.remove('recording','locked');
+  }
+
+  async function handleRecordingDone(mimeType){
+    micBtn.disabled = true;
+    micBtn.classList.add('transcribing');
+    setMicIcon(SPIN_ICON);
+
+    try{
+      const ext  = mimeType.includes('mp4')?'mp4':mimeType.includes('ogg')?'ogg':'webm';
+      const blob = new Blob(audioChunks,{type:mimeType||'audio/webm'});
+      const form = new FormData();
+      form.append('file', blob, `audio.${ext}`);
+      form.append('model','whisper-large-v3');
+      // Pass language hint: if specific lang selected use it, else let Whisper auto-detect
+      if(state.lang !== 'auto'){
+        form.append('language', state.lang); // 'en','ru','uk'
+      }
+      // For auto mode: Whisper detects on its own — works well for EN/RU/UK
+
+      const res  = await fetch('/api/transcribe',{method:'POST',body:form});
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error||'Transcription failed');
+
+      if(data.text){
+        const cur = els.input.value;
+        els.input.value = cur ? cur+' '+data.text : data.text;
+        autoResize(els.input);
+        els.sendBtn.disabled = false;
+        els.input.focus();
+      }
+    }catch(err){
+      alert('Transcription error: '+err.message);
+    }finally{
+      micBtn.disabled = false;
+      micBtn.classList.remove('transcribing');
+      setMicIcon(MIC_ICON);
+    }
+  }
+
+  // ── Pointer events (hold + drag-up-to-lock) ──────────────
+  micBtn.addEventListener('pointerdown', async e=>{
+    if(micBtn.disabled) return;
+    e.preventDefault();
+    holdStartY = e.clientY;
+    micBtn.setPointerCapture(e.pointerId);
+    await startRecording();
+  });
+
+  micBtn.addEventListener('pointermove', e=>{
+    if(!isRecording||isLocked) return;
+    const dy = holdStartY - e.clientY; // positive = dragged up
+    if(dy >= LOCK_THRESHOLD){
+      isLocked = true;
+      micBtn.classList.remove('recording');
+      micBtn.classList.add('locked');
     }
   });
 
-  // ── Init ───────────────────────────────────────────────────  renderUI();
+  micBtn.addEventListener('pointerup', e=>{
+    if(!isRecording) return;
+    if(isLocked) return; // locked — don't stop on release
+    stopRecording();
+  });
+
+  micBtn.addEventListener('pointercancel', ()=>{
+    if(isRecording&&!isLocked) stopRecording();
+  });
+
+  // When locked, a tap stops it
+  micBtn.addEventListener('click', e=>{
+    if(isLocked) stopRecording();
+  });
+
+  // ── Init ─────────────────────────────────────────────────
+  renderUI();
   renderChatHistory();
 </script>
 </body>
