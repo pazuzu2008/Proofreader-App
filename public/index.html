@@ -5,53 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Proofreader</title>
   <link rel="icon" href="/favicon.png" type="image/png">
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
   <style>
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      background: #fafafa;
-      color: #111;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #fafafa; color: #111; margin: 0; padding: 0; box-sizing: border-box; }
     .container { max-width: 680px; margin: 0 auto; padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 24px); }
     .header-title { font-size: clamp(20px, 5vw, 26px); font-weight: 700; margin: 0; letter-spacing: -0.5px; }
     .header-subtitle { font-size: 13px; color: #999; margin: 4px 0 20px; }
     .section-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-    
     .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
     .row { display: flex; align-items: center; gap: 10px; }
     .row-label { font-size: 12px; font-weight: 600; color: #999; white-space: nowrap; width: 120px; flex-shrink: 0; }
-    
     .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
     .chip { padding: 4px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; font-family: inherit; transition: all 0.15s ease; outline: none; }
     .chip:hover { border-color: #bbb; }
     .chip.active { background: #111; color: #fff; border-color: #111; font-weight: 500; }
-    
     .field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .field-title { font-size: 13px; font-weight: 600; color: #555; }
+    .field-actions { display: flex; align-items: center; gap: 2px; }
     .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; color: #aaa; transition: color 0.2s; }
     .icon-btn:hover:not(:disabled) { color: #111; }
+    .icon-btn.danger:hover:not(:disabled) { color: #ef4444; }
     .icon-btn.copied { color: #22c55e !important; }
     .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    
-    textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: #fff; color: #111; font-family: inherit; transition: border-color 0.2s; display: block; margin-bottom: 14px;}
+    textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: #fff; color: #111; font-family: inherit; transition: border-color 0.2s; display: block; margin-bottom: 14px; }
     textarea:focus { border-color: #999; }
-    
     .main-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: #111; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all 0.2s; font-family: inherit; }
     .main-btn:disabled { background: #e5e5e5; color: #999; cursor: not-allowed; }
     .main-btn:hover:not(:disabled) { background: #333; }
-    
-    .output-box { min-height: 90px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; background: #f7f7f7; font-size: 15px; line-height: 1.7; color: #bbb; white-space: pre-wrap; word-break: break-word; }
+    .output-box { min-height: 90px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; background: #f7f7f7; font-size: 15px; line-height: 1.7; color: #bbb; white-space: pre-wrap; word-break: break-word; outline: none; }
     .output-box.has-content { background: #fff; color: #111; }
+    .output-box.has-content:focus { border-color: #999; }
+    .output-box[contenteditable="true"]:empty:before { content: attr(data-placeholder); color: #bbb; }
+
+    /* Word upload */
+    .word-upload-area { margin-bottom: 10px; }
+    .word-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 12px; color: #3b82f6; font-weight: 500; }
+    .word-badge-remove { background: none; border: none; cursor: pointer; color: #93c5fd; padding: 0 0 0 4px; font-size: 16px; line-height: 1; display: flex; align-items: center; }
+    .word-badge-remove:hover { color: #3b82f6; }
+    .upload-label { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px dashed #ddd; border-radius: 8px; background: none; color: #999; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .upload-label:hover { border-color: #bbb; color: #555; }
+
+    /* Download btn */
+    .download-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #16a34a; cursor: pointer; font-family: inherit; transition: all 0.15s; margin-right: 4px; }
+    .download-btn:hover { background: #dcfce7; }
+
+    /* History */
+    .history-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e5e5; }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .history-clear { background: none; border: none; font-size: 11px; color: #bbb; cursor: pointer; font-family: inherit; padding: 0; transition: color 0.15s; }
+    .history-clear:hover { color: #ef4444; }
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .history-item { padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+    .history-item:hover { border-color: #bbb; background: #f7f7f7; }
+    .history-snippet { font-size: 13px; color: #444; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .history-lang { font-size: 13px; }
+    .history-time { font-size: 11px; color: #bbb; }
   </style>
 </head>
 <body>
@@ -75,13 +86,23 @@
       </div>
     </div>
 
+    <!-- Word upload -->
+    <div class="word-upload-area" id="word-upload-area"></div>
+
     <div class="field-header">
       <span class="field-title" id="t-input-label">Your text</span>
-      <button class="icon-btn" id="copy-input">
-        <svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />
-        </svg>
-      </button>
+      <div class="field-actions">
+        <button class="icon-btn danger" id="clear-input" title="Clear">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="copy-input" title="Copy">
+          <svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <textarea id="input-text" rows="3"></textarea>
 
@@ -89,19 +110,27 @@
 
     <div class="field-header">
       <span class="field-title" id="t-output-label">Proofread result</span>
-      <button class="icon-btn" id="copy-output" disabled>
-        <svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />
-        </svg>
-      </button>
+      <div class="field-actions" id="output-actions"></div>
     </div>
-    <div class="output-box" id="output-text"></div>
+    <div class="output-box" id="output-text" contenteditable="false"></div>
+
+    <!-- History -->
+    <div class="history-section" id="history-section" style="display:none">
+      <div class="history-header">
+        <div class="section-label" style="margin:0" id="t-recent">RECENT</div>
+        <button class="history-clear" id="history-clear-btn">Clear history</button>
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.min.js"></script>
   <script>
     const LANGUAGES = [{ code: "en", label: "🇬🇧 English" }, { code: "ru", label: "🇷🇺 Русский" }, { code: "uk", label: "🇺🇦 Українська" }];
     const TONE_EN = ["Formal", "Neutral", "Casual", "Friendly"];
     const LEVEL_EN = ["Simple", "Standard", "Advanced"];
+    const LANG_FLAG = { en: "🇬🇧", ru: "🇷🇺", uk: "🇺🇦" };
 
     const UI = {
       en: { title: "Proofreader", subtitle: "Paste your text and get it polished instantly", inputLabel: "Your text", outputLabel: "Proofread result", inputPlaceholder: "Type or paste your text here...", outputPlaceholder: "Result will appear here...", proofread: "Proofread", tone: "Tone", level: "Language Level", loading: "Proofreading...", language: "Language", settings: "Settings", tones: ["Formal", "Neutral", "Casual", "Friendly"], levels: ["Simple", "Standard", "Advanced"] },
@@ -111,10 +140,51 @@
 
     const SYSTEM_PROMPT = {
       en: (tone, level) => `You are a professional proofreader. Proofread and correct the user's text. Tone: ${tone}. Language level: ${level}. Return ONLY the corrected text in English, no explanations or comments.`,
-      ru: (tone, level) => `Ты профессиональный корректор. Проверь и исправь текст пользователя, верни исправленную версию на русском языке. Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,
-      uk: (tone, level) => `Ти професійний коректор. Перевір та виправ текст користувача, поверни виправлену версію українською мовою. Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,
+      ru: (tone, level) => `Ты профессиональный корректор. Проверь и исправь текст пользователя. Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,
+      uk: (tone, level) => `Ти професійний коректор. Перевір та виправ текст користувача. Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,
     };
 
+    // ── History ──────────────────────────────────────────
+    const HISTORY_KEY = 'pr_history';
+    const MAX_HISTORY = 7;
+
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+    }
+
+    function saveToHistory(input, output, lang, toneIdx, levelIdx) {
+      let h = loadHistory().filter(x => x.input !== input);
+      h.unshift({ input, output, lang, toneIdx, levelIdx, ts: Date.now() });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, MAX_HISTORY)));
+    }
+
+    function timeAgo(ts) {
+      const m = Math.floor((Date.now() - ts) / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    }
+
+    function renderHistory() {
+      const h = loadHistory();
+      const section = document.getElementById('history-section');
+      const list = document.getElementById('history-list');
+      if (!h.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      list.innerHTML = h.map((item, i) => `
+        <div class="history-item" data-idx="${i}">
+          <span class="history-snippet">${item.input.slice(0, 65).replace(/</g, '&lt;')}${item.input.length > 65 ? '…' : ''}</span>
+          <div class="history-meta">
+            <span class="history-lang">${LANG_FLAG[item.lang] || ''}</span>
+            <span class="history-time">${timeAgo(item.ts)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ── State ─────────────────────────────────────────────
     let state = {
       lang: localStorage.getItem("pr_lang") || "en",
       toneIdx: parseInt(localStorage.getItem("pr_tone")) || 1,
@@ -124,22 +194,125 @@
       loading: false
     };
 
+    let wordFileName = null;
+    let isOutputFocused = false;
+
     const els = {
-      input: document.getElementById('input-text'), output: document.getElementById('output-text'), btn: document.getElementById('proofread-btn'),
-      langGroup: document.getElementById('lang-group'), levelGroup: document.getElementById('level-group'), toneGroup: document.getElementById('tone-group'),
-      copyInput: document.getElementById('copy-input'), copyOutput: document.getElementById('copy-output')
+      input: document.getElementById('input-text'),
+      output: document.getElementById('output-text'),
+      btn: document.getElementById('proofread-btn'),
+      langGroup: document.getElementById('lang-group'),
+      levelGroup: document.getElementById('level-group'),
+      toneGroup: document.getElementById('tone-group'),
+      copyInput: document.getElementById('copy-input'),
+      clearInput: document.getElementById('clear-input'),
+      outputActions: document.getElementById('output-actions'),
+      wordUploadArea: document.getElementById('word-upload-area'),
     };
 
+    // ── Word upload/download ──────────────────────────────
+    function renderWordUploadArea() {
+      if (wordFileName) {
+        els.wordUploadArea.innerHTML = `
+          <div class="word-badge">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+            ${wordFileName}
+            <button class="word-badge-remove" id="remove-word" title="Remove file">×</button>
+          </div>`;
+        document.getElementById('remove-word').addEventListener('click', () => {
+          wordFileName = null;
+          renderWordUploadArea();
+          renderOutputActions();
+        });
+      } else {
+        els.wordUploadArea.innerHTML = `
+          <label class="upload-label" title="Upload a .docx file to proofread it">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+            Upload .docx
+            <input type="file" accept=".docx" id="word-file-input" style="display:none">
+          </label>`;
+        document.getElementById('word-file-input').addEventListener('change', handleWordUpload);
+      }
+    }
+
+    async function handleWordUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        wordFileName = file.name;
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        state.input = result.value.trim();
+        localStorage.setItem('pr_input', state.input);
+        renderWordUploadArea();
+        updateUI();
+      } catch (err) {
+        alert('Could not read file: ' + err.message);
+        wordFileName = null;
+        renderWordUploadArea();
+      }
+    }
+
+    async function downloadCorrectedWord() {
+      if (!state.output || !window.docx) return;
+      const { Document, Paragraph, TextRun, Packer } = window.docx;
+      const paragraphs = state.output.split('\n').map(line =>
+        new Paragraph({ children: [new TextRun(line || '')] })
+      );
+      const doc = new Document({ sections: [{ children: paragraphs }] });
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = wordFileName.replace(/\.docx$/i, '_proofread.docx');
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ── Output actions (dynamic) ──────────────────────────
+    function renderOutputActions() {
+      const hasOutput = !!state.output;
+      const showDownload = wordFileName && hasOutput && !state.loading;
+      els.outputActions.innerHTML = `
+        ${showDownload ? `<button class="download-btn" id="download-word-btn">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8M5 8l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke-linecap="round"/></svg>
+          Download .docx
+        </button>` : ''}
+        <button class="icon-btn" id="copy-output" ${!hasOutput ? 'disabled' : ''} title="Copy result">
+          <svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
+          </svg>
+        </button>`;
+      document.getElementById('copy-output').addEventListener('click', () => copyText(state.output, 'copy-output', 'svg-output'));
+      const dlBtn = document.getElementById('download-word-btn');
+      if (dlBtn) dlBtn.addEventListener('click', downloadCorrectedWord);
+    }
+
+    // ── Render ────────────────────────────────────────────
     function renderText() {
       const t = UI[state.lang];
-      document.getElementById('t-title').innerText = t.title; document.getElementById('t-subtitle').innerText = t.subtitle;
-      document.getElementById('t-settings').innerText = t.settings; document.getElementById('t-lang-label').innerText = t.language;
-      document.getElementById('t-level-label').innerText = t.level; document.getElementById('t-tone-label').innerText = t.tone;
-      document.getElementById('t-input-label').innerText = t.inputLabel; document.getElementById('t-output-label').innerText = t.outputLabel;
-      els.input.placeholder = t.inputPlaceholder; els.btn.innerText = state.loading ? t.loading : t.proofread;
-      
-      if (!state.output) { els.output.innerText = state.loading ? t.loading : t.outputPlaceholder; els.output.classList.remove('has-content'); } 
-      else { els.output.innerText = state.output; els.output.classList.add('has-content'); }
+      document.getElementById('t-title').innerText = t.title;
+      document.getElementById('t-subtitle').innerText = t.subtitle;
+      document.getElementById('t-settings').innerText = t.settings;
+      document.getElementById('t-lang-label').innerText = t.language;
+      document.getElementById('t-level-label').innerText = t.level;
+      document.getElementById('t-tone-label').innerText = t.tone;
+      document.getElementById('t-input-label').innerText = t.inputLabel;
+      document.getElementById('t-output-label').innerText = t.outputLabel;
+      els.input.placeholder = t.inputPlaceholder;
+      els.btn.innerText = state.loading ? t.loading : t.proofread;
+
+      if (!isOutputFocused) {
+        if (!state.output) {
+          els.output.innerText = state.loading ? t.loading : t.outputPlaceholder;
+          els.output.classList.remove('has-content');
+          els.output.contentEditable = 'false';
+        } else {
+          els.output.innerText = state.output;
+          els.output.classList.add('has-content');
+          els.output.contentEditable = state.loading ? 'false' : 'true';
+        }
+      }
     }
 
     function renderChips() {
@@ -149,56 +322,151 @@
       els.toneGroup.innerHTML = t.tones.map((tn, i) => `<button class="chip ${state.toneIdx === i ? 'active' : ''}" data-type="tone" data-val="${i}">${tn}</button>`).join('');
     }
 
-    function updateState(key, val) { state[key] = val; localStorage.setItem(`pr_${key}`, val); updateUI(); }
-    function updateUI() { renderText(); renderChips(); els.input.value = state.input; autoResize(els.input); els.btn.disabled = state.loading || !state.input.trim(); els.copyOutput.disabled = !state.output; }
-    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, 90) + 'px'; }
+    function updateUI() {
+      renderText();
+      renderChips();
+      renderOutputActions();
+      els.input.value = state.input;
+      autoResize(els.input);
+      els.btn.disabled = state.loading || !state.input.trim();
+      els.clearInput.disabled = !state.input && !state.output;
+    }
 
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.max(el.scrollHeight, 90) + 'px';
+    }
+
+    // ── Proofread ─────────────────────────────────────────
     async function handleProofread() {
       if (!state.input.trim() || state.loading) return;
-      
-      updateState('loading', true);
-      updateState('output', '');
-      
-      const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx])}\n\nOriginal text:\n${state.input}`;
+      state.loading = true;
+      state.output = '';
+      updateUI();
 
+      const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx])}\n\nOriginal text:\n${state.input}`;
       try {
         const res = await fetch('/api/proofread', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: promptText, lang: state.lang })
         });
-        
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Server error');
-        
-        updateState('output', data.result);
+        state.output = data.result;
+        localStorage.setItem('pr_output', data.result);
+        saveToHistory(state.input, data.result, state.lang, state.toneIdx, state.levelIdx);
+        renderHistory();
       } catch (err) {
-        updateState('output', "Error: " + err.message);
+        state.output = "Error: " + err.message;
       } finally {
-        updateState('loading', false);
+        state.loading = false;
+        updateUI();
       }
     }
 
-    els.input.addEventListener('input', (e) => { updateState('input', e.target.value); });
-    els.input.addEventListener('keydown', (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleProofread(); } });
+    // ── Copy ──────────────────────────────────────────────
+    function copyText(text, btnId, svgId) {
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+      const btn = document.getElementById(btnId);
+      const svg = document.getElementById(svgId);
+      if (!btn || !svg) return;
+      btn.classList.add('copied');
+      svg.innerHTML = `<polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        svg.innerHTML = `<rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>`;
+      }, 1500);
+    }
+
+    // ── Event listeners ───────────────────────────────────
+    els.input.addEventListener('input', (e) => {
+      state.input = e.target.value;
+      localStorage.setItem('pr_input', state.input);
+      autoResize(els.input);
+      els.btn.disabled = state.loading || !state.input.trim();
+      els.clearInput.disabled = !state.input && !state.output;
+    });
+    els.input.addEventListener('keydown', (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleProofread(); }
+    });
+
     els.btn.addEventListener('click', handleProofread);
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('chip')) {
-        const type = e.target.getAttribute('data-type'); const val = e.target.getAttribute('data-val');
-        if (type === 'lang') updateState('lang', val); if (type === 'level') updateState('levelIdx', parseInt(val)); if (type === 'tone') updateState('toneIdx', parseInt(val));
+
+    els.clearInput.addEventListener('click', () => {
+      wordFileName = null;
+      state.input = '';
+      state.output = '';
+      localStorage.removeItem('pr_input');
+      localStorage.removeItem('pr_output');
+      renderWordUploadArea();
+      updateUI();
+    });
+
+    els.copyInput.addEventListener('click', () => copyText(state.input, 'copy-input', 'svg-input'));
+
+    // Output inline editing
+    els.output.addEventListener('focus', () => { isOutputFocused = true; });
+    els.output.addEventListener('blur', () => {
+      isOutputFocused = false;
+      if (els.output.contentEditable === 'true') {
+        state.output = els.output.innerText.trim();
+        localStorage.setItem('pr_output', state.output);
+        renderOutputActions();
+      }
+    });
+    els.output.addEventListener('input', () => {
+      state.output = els.output.innerText;
+    });
+    // Prevent enter from inserting <div> in contenteditable
+    els.output.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.execCommand('insertLineBreak');
       }
     });
 
-    function copyText(text, btnId, svgId) {
-      if (!text) return; navigator.clipboard.writeText(text);
-      const btn = document.getElementById(btnId); const svg = document.getElementById(svgId);
-      btn.classList.add('copied'); svg.innerHTML = `<polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />`;
-      setTimeout(() => { btn.classList.remove('copied'); svg.innerHTML = `<rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />`; }, 1500);
-    }
+    // Chips
+    document.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('chip')) return;
+      const type = e.target.getAttribute('data-type');
+      const val = e.target.getAttribute('data-val');
+      if (type === 'lang') { state.lang = val; localStorage.setItem('pr_lang', val); }
+      if (type === 'level') { state.levelIdx = parseInt(val); localStorage.setItem('pr_level', val); }
+      if (type === 'tone') { state.toneIdx = parseInt(val); localStorage.setItem('pr_tone', val); }
+      updateUI();
+    });
 
-    els.copyInput.addEventListener('click', () => copyText(state.input, 'copy-input', 'svg-input'));
-    els.copyOutput.addEventListener('click', () => copyText(state.output, 'copy-output', 'svg-output'));
+    // History
+    document.getElementById('history-clear-btn').addEventListener('click', () => {
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+    });
+    document.getElementById('history-list').addEventListener('click', (e) => {
+      const item = e.target.closest('.history-item');
+      if (!item) return;
+      const entry = loadHistory()[parseInt(item.getAttribute('data-idx'))];
+      if (!entry) return;
+      state.lang = entry.lang;
+      state.toneIdx = entry.toneIdx;
+      state.levelIdx = entry.levelIdx;
+      state.input = entry.input;
+      state.output = entry.output;
+      localStorage.setItem('pr_lang', entry.lang);
+      localStorage.setItem('pr_tone', entry.toneIdx);
+      localStorage.setItem('pr_level', entry.levelIdx);
+      localStorage.setItem('pr_input', entry.input);
+      localStorage.setItem('pr_output', entry.output);
+      wordFileName = null;
+      renderWordUploadArea();
+      updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
+    // ── Init ──────────────────────────────────────────────
+    renderWordUploadArea();
+    renderHistory();
     updateUI();
   </script>
 </body>
