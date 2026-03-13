@@ -164,7 +164,7 @@
         const res = await fetch('/api/proofread', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptText })
+          body: JSON.stringify({ prompt: promptText, lang: state.lang })
         });
         
         const data = await res.json();
