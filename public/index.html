@@ -1,221 +1,204 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.4">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proofreader</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: #fafafa;
+      color: #111;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 24px); }
+    .header-title { font-size: clamp(20px, 5vw, 26px); font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+    .header-subtitle { font-size: 13px; color: #999; margin: 4px 0 20px; }
+    .section-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    
+    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .row-label { font-size: 12px; font-weight: 600; color: #999; white-space: nowrap; width: 120px; flex-shrink: 0; }
+    
+    .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { padding: 4px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; font-family: inherit; transition: all 0.15s ease; outline: none; }
+    .chip:hover { border-color: #bbb; }
+    .chip.active { background: #111; color: #fff; border-color: #111; font-weight: 500; }
+    
+    .field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .field-title { font-size: 13px; font-weight: 600; color: #555; }
+    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; color: #aaa; transition: color 0.2s; }
+    .icon-btn:hover:not(:disabled) { color: #111; }
+    .icon-btn.copied { color: #22c55e !important; }
+    .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: #fff; color: #111; font-family: inherit; transition: border-color 0.2s; display: block; margin-bottom: 14px;}
+    textarea:focus { border-color: #999; }
+    
+    .main-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: #111; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all 0.2s; font-family: inherit; }
+    .main-btn:disabled { background: #e5e5e5; color: #999; cursor: not-allowed; }
+    .main-btn:hover:not(:disabled) { background: #333; }
+    
+    .output-box { min-height: 90px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; background: #f7f7f7; font-size: 15px; line-height: 1.7; color: #bbb; white-space: pre-wrap; word-break: break-word; }
+    .output-box.has-content { background: #fff; color: #111; }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="utf-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Proofreader&lt;/title&gt;</p>
-<p class="p2"><span class="Apple-converted-space">  </span></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"&gt;</p>
-<p class="p2"><span class="Apple-converted-space">  </span></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-family: 'Inter', system-ui, -apple-system, sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>-webkit-font-smoothing: antialiased;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>-moz-osx-font-smoothing: grayscale;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #fafafa;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #111;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>box-sizing: border-box;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.container { max-width: 680px; margin: 0 auto; padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 24px); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.header-title { font-size: clamp(20px, 5vw, 26px); font-weight: 700; margin: 0; letter-spacing: -0.5px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.header-subtitle { font-size: 13px; color: #999; margin: 4px 0 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.section-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.row { display: flex; align-items: center; gap: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.row-label { font-size: 12px; font-weight: 600; color: #999; white-space: nowrap; width: 120px; flex-shrink: 0; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.chip-group { display: flex; gap: 6px; flex-wrap: wrap; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.chip { padding: 4px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; font-family: inherit; transition: all 0.15s ease; outline: none; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.chip:hover { border-color: #bbb; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.chip.active { background: #111; color: #fff; border-color: #111; font-weight: 500; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.field-title { font-size: 13px; font-weight: 600; color: #555; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; color: #aaa; transition: color 0.2s; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.icon-btn:hover:not(:disabled) { color: #111; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.icon-btn.copied { color: #22c55e !important; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: #fff; color: #111; font-family: inherit; transition: border-color 0.2s; display: block; margin-bottom: 14px;}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>textarea:focus { border-color: #999; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.main-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: #111; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all 0.2s; font-family: inherit; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.main-btn:disabled { background: #e5e5e5; color: #999; cursor: not-allowed; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.main-btn:hover:not(:disabled) { background: #333; }</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.output-box { min-height: 90px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; background: #f7f7f7; font-size: 15px; line-height: 1.7; color: #bbb; white-space: pre-wrap; word-break: break-word; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.output-box.has-content { background: #fff; color: #111; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;h1 class="header-title" id="t-title"&gt;Proofreader&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p class="header-subtitle" id="t-subtitle"&gt;Paste your text and get it polished instantly&lt;/p&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="section-label" id="t-settings"&gt;SETTINGS&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;span class="row-label" id="t-lang-label"&gt;Language&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="chip-group" id="lang-group"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;span class="row-label" id="t-level-label"&gt;Language Level&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="chip-group" id="level-group"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;span class="row-label" id="t-tone-label"&gt;Tone&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="chip-group" id="tone-group"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="field-header"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="field-title" id="t-input-label"&gt;Your text&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;button class="icon-btn" id="copy-input"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;rect x="5" y="1" width="9" height="11" rx="1.5" /&gt;&lt;path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/svg&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;textarea id="input-text" rows="3"&gt;&lt;/textarea&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button class="main-btn" id="proofread-btn" disabled&gt;Proofread&lt;/button&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="field-header"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="field-title" id="t-output-label"&gt;Proofread result&lt;/span&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;button class="icon-btn" id="copy-output" disabled&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;rect x="5" y="1" width="9" height="11" rx="1.5" /&gt;&lt;path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/svg&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="output-box" id="output-text"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const LANGUAGES = [{ code: "en", label: "🇬🇧 English" }, { code: "ru", label: "🇷🇺 Русский" }, { code: "uk", label: "🇺🇦 Українська" }];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const TONE_EN = ["Formal", "Neutral", "Casual", "Friendly"];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const LEVEL_EN = ["Simple", "Standard", "Advanced"];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const UI = {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>en: { title: "Proofreader", subtitle: "Paste your text and get it polished instantly", inputLabel: "Your text", outputLabel: "Proofread result", inputPlaceholder: "Type or paste your text here...", outputPlaceholder: "Result will appear here...", proofread: "Proofread", tone: "Tone", level: "Language Level", loading: "Proofreading...", language: "Language", settings: "Settings", tones: ["Formal", "Neutral", "Casual", "Friendly"], levels: ["Simple", "Standard", "Advanced"] },</p>
-<p class="p1"><span class="Apple-converted-space">      </span>ru: { title: "Пруфридер", subtitle: "Вставьте текст и получите исправленную версию мгновенно", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введите или вставьте текст сюда...", outputPlaceholder: "Результат появится здесь...", proofread: "Проверить", tone: "Тон", level: "Уровень языка", loading: "Проверяем...", language: "Язык", settings: "Настройки", tones: ["Официальный", "Нейтральный", "Непринуждённый", "Дружелюбный"], levels: ["Простой", "Стандартный", "Продвинутый"] },</p>
-<p class="p1"><span class="Apple-converted-space">      </span>uk: { title: "Пруфрідер", subtitle: "Вставте текст і отримайте виправлену версію миттєво", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введіть або вставте текст сюди...", outputPlaceholder: "Результат з'явиться тут...", proofread: "Перевірити", tone: "Тон", level: "Рівень мови", loading: "Перевіряємо...", language: "Мова", settings: "Налаштування", tones: ["Офіційний", "Нейтральний", "Невимушений", "Дружній"], levels: ["Простий", "Стандартний", "Просунутий"] }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const SYSTEM_PROMPT = {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>en: (tone, level) =&gt; `You are a professional proofreader. Proofread and correct the user's text. Tone: ${tone}. Language level: ${level}. Return ONLY the corrected text in English, no explanations or comments.`,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>ru: (tone, level) =&gt; `Ты профессиональный корректор. Проверь и исправь текст пользователя, верни исправленную версию на русском языке. Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>uk: (tone, level) =&gt; `Ти професійний коректор. Перевір та виправ текст користувача, поверни виправлену версію українською мовою. Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>let state = {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>lang: localStorage.getItem("pr_lang") || "en",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>toneIdx: parseInt(localStorage.getItem("pr_tone")) || 1,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>levelIdx: parseInt(localStorage.getItem("pr_level")) || 1,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>input: localStorage.getItem("pr_input") || "",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>output: localStorage.getItem("pr_output") || "",</p>
-<p class="p1"><span class="Apple-converted-space">      </span>loading: false</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const els = {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>input: document.getElementById('input-text'), output: document.getElementById('output-text'), btn: document.getElementById('proofread-btn'),</p>
-<p class="p1"><span class="Apple-converted-space">      </span>langGroup: document.getElementById('lang-group'), levelGroup: document.getElementById('level-group'), toneGroup: document.getElementById('tone-group'),</p>
-<p class="p1"><span class="Apple-converted-space">      </span>copyInput: document.getElementById('copy-input'), copyOutput: document.getElementById('copy-output')</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderText() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const t = UI[state.lang];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('t-title').innerText = t.title; document.getElementById('t-subtitle').innerText = t.subtitle;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('t-settings').innerText = t.settings; document.getElementById('t-lang-label').innerText = t.language;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('t-level-label').innerText = t.level; document.getElementById('t-tone-label').innerText = t.tone;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('t-input-label').innerText = t.inputLabel; document.getElementById('t-output-label').innerText = t.outputLabel;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>els.input.placeholder = t.inputPlaceholder; els.btn.innerText = state.loading ? t.loading : t.proofread;</p>
-<p class="p2"><span class="Apple-converted-space">      </span></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!state.output) { els.output.innerText = state.loading ? t.loading : t.outputPlaceholder; els.output.classList.remove('has-content'); }<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">      </span>else { els.output.innerText = state.output; els.output.classList.add('has-content'); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderChips() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const t = UI[state.lang];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>els.langGroup.innerHTML = LANGUAGES.map(l =&gt; `&lt;button class="chip ${state.lang === l.code ? 'active' : ''}" data-type="lang" data-val="${l.code}"&gt;${l.label}&lt;/button&gt;`).join('');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>els.levelGroup.innerHTML = t.levels.map((lvl, i) =&gt; `&lt;button class="chip ${state.levelIdx === i ? 'active' : ''}" data-type="level" data-val="${i}"&gt;${lvl}&lt;/button&gt;`).join('');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>els.toneGroup.innerHTML = t.tones.map((tn, i) =&gt; `&lt;button class="chip ${state.toneIdx === i ? 'active' : ''}" data-type="tone" data-val="${i}"&gt;${tn}&lt;/button&gt;`).join('');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function updateState(key, val) { state[key] = val; localStorage.setItem(`pr_${key}`, val); updateUI(); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function updateUI() { renderText(); renderChips(); els.input.value = state.input; autoResize(els.input); els.btn.disabled = state.loading || !state.input.trim(); els.copyOutput.disabled = !state.output; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, 90) + 'px'; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// --- ВОТ ГЛАВНОЕ ИЗМЕНЕНИЕ: ОТПРАВЛЯЕМ ЗАПРОС НА VERCEL API ---</p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function handleProofread() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!state.input.trim() || state.loading) return;</p>
-<p class="p2"><span class="Apple-converted-space">      </span></p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateState('loading', true);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateState('output', '');</p>
-<p class="p2"><span class="Apple-converted-space">      </span></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx])}\n\nOriginal text:\n${state.input}`;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const res = await fetch('/api/proofread', {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>method: 'POST',</p>
-<p class="p1"><span class="Apple-converted-space">          </span>headers: { 'Content-Type': 'application/json' },</p>
-<p class="p1"><span class="Apple-converted-space">          </span>body: JSON.stringify({ prompt: promptText })</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const data = await res.json();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (!res.ok) throw new Error(data.error || 'Server error');</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateState('output', data.result);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateState('output', "Error: " + err.message);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateState('loading', false);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>els.input.addEventListener('input', (e) =&gt; { updateState('input', e.target.value); });</p>
-<p class="p1"><span class="Apple-converted-space">    </span>els.input.addEventListener('keydown', (e) =&gt; { if (e.key === "Enter" &amp;&amp; !e.shiftKey) { e.preventDefault(); handleProofread(); } });</p>
-<p class="p1"><span class="Apple-converted-space">    </span>els.btn.addEventListener('click', handleProofread);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>document.addEventListener('click', (e) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (e.target.classList.contains('chip')) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const type = e.target.getAttribute('data-type'); const val = e.target.getAttribute('data-val');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (type === 'lang') updateState('lang', val); if (type === 'level') updateState('levelIdx', parseInt(val)); if (type === 'tone') updateState('toneIdx', parseInt(val));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function copyText(text, btnId, svgId) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!text) return; navigator.clipboard.writeText(text);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const btn = document.getElementById(btnId); const svg = document.getElementById(svgId);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>btn.classList.add('copied'); svg.innerHTML = `&lt;polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /&gt;`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>setTimeout(() =&gt; { btn.classList.remove('copied'); svg.innerHTML = `&lt;rect x="5" y="1" width="9" height="11" rx="1.5" /&gt;&lt;path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" /&gt;`; }, 1500);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>els.copyInput.addEventListener('click', () =&gt; copyText(state.input, 'copy-input', 'svg-input'));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>els.copyOutput.addEventListener('click', () =&gt; copyText(state.output, 'copy-output', 'svg-output'));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>updateUI();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <div class="container">
+    <h1 class="header-title" id="t-title">Proofreader</h1>
+    <p class="header-subtitle" id="t-subtitle">Paste your text and get it polished instantly</p>
+
+    <div class="section-label" id="t-settings">SETTINGS</div>
+    <div class="card">
+      <div class="row">
+        <span class="row-label" id="t-lang-label">Language</span>
+        <div class="chip-group" id="lang-group"></div>
+      </div>
+      <div class="row">
+        <span class="row-label" id="t-level-label">Language Level</span>
+        <div class="chip-group" id="level-group"></div>
+      </div>
+      <div class="row">
+        <span class="row-label" id="t-tone-label">Tone</span>
+        <div class="chip-group" id="tone-group"></div>
+      </div>
+    </div>
+
+    <div class="field-header">
+      <span class="field-title" id="t-input-label">Your text</span>
+      <button class="icon-btn" id="copy-input">
+        <svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />
+        </svg>
+      </button>
+    </div>
+    <textarea id="input-text" rows="3"></textarea>
+
+    <button class="main-btn" id="proofread-btn" disabled>Proofread</button>
+
+    <div class="field-header">
+      <span class="field-title" id="t-output-label">Proofread result</span>
+      <button class="icon-btn" id="copy-output" disabled>
+        <svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />
+        </svg>
+      </button>
+    </div>
+    <div class="output-box" id="output-text"></div>
+  </div>
+
+  <script>
+    const LANGUAGES = [{ code: "en", label: "🇬🇧 English" }, { code: "ru", label: "🇷🇺 Русский" }, { code: "uk", label: "🇺🇦 Українська" }];
+    const TONE_EN = ["Formal", "Neutral", "Casual", "Friendly"];
+    const LEVEL_EN = ["Simple", "Standard", "Advanced"];
+
+    const UI = {
+      en: { title: "Proofreader", subtitle: "Paste your text and get it polished instantly", inputLabel: "Your text", outputLabel: "Proofread result", inputPlaceholder: "Type or paste your text here...", outputPlaceholder: "Result will appear here...", proofread: "Proofread", tone: "Tone", level: "Language Level", loading: "Proofreading...", language: "Language", settings: "Settings", tones: ["Formal", "Neutral", "Casual", "Friendly"], levels: ["Simple", "Standard", "Advanced"] },
+      ru: { title: "Пруфридер", subtitle: "Вставьте текст и получите исправленную версию мгновенно", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введите или вставьте текст сюда...", outputPlaceholder: "Результат появится здесь...", proofread: "Проверить", tone: "Тон", level: "Уровень языка", loading: "Проверяем...", language: "Язык", settings: "Настройки", tones: ["Официальный", "Нейтральный", "Непринуждённый", "Дружелюбный"], levels: ["Простой", "Стандартный", "Продвинутый"] },
+      uk: { title: "Пруфрідер", subtitle: "Вставте текст і отримайте виправлену версію миттєво", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введіть або вставте текст сюди...", outputPlaceholder: "Результат з'явиться тут...", proofread: "Перевірити", tone: "Тон", level: "Рівень мови", loading: "Перевіряємо...", language: "Мова", settings: "Налаштування", tones: ["Офіційний", "Нейтральний", "Невимушений", "Дружній"], levels: ["Простий", "Стандартний", "Просунутий"] }
+    };
+
+    const SYSTEM_PROMPT = {
+      en: (tone, level) => `You are a professional proofreader. Proofread and correct the user's text. Tone: ${tone}. Language level: ${level}. Return ONLY the corrected text in English, no explanations or comments.`,
+      ru: (tone, level) => `Ты профессиональный корректор. Проверь и исправь текст пользователя, верни исправленную версию на русском языке. Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,
+      uk: (tone, level) => `Ти професійний коректор. Перевір та виправ текст користувача, поверни виправлену версію українською мовою. Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,
+    };
+
+    let state = {
+      lang: localStorage.getItem("pr_lang") || "en",
+      toneIdx: parseInt(localStorage.getItem("pr_tone")) || 1,
+      levelIdx: parseInt(localStorage.getItem("pr_level")) || 1,
+      input: localStorage.getItem("pr_input") || "",
+      output: localStorage.getItem("pr_output") || "",
+      loading: false
+    };
+
+    const els = {
+      input: document.getElementById('input-text'), output: document.getElementById('output-text'), btn: document.getElementById('proofread-btn'),
+      langGroup: document.getElementById('lang-group'), levelGroup: document.getElementById('level-group'), toneGroup: document.getElementById('tone-group'),
+      copyInput: document.getElementById('copy-input'), copyOutput: document.getElementById('copy-output')
+    };
+
+    function renderText() {
+      const t = UI[state.lang];
+      document.getElementById('t-title').innerText = t.title; document.getElementById('t-subtitle').innerText = t.subtitle;
+      document.getElementById('t-settings').innerText = t.settings; document.getElementById('t-lang-label').innerText = t.language;
+      document.getElementById('t-level-label').innerText = t.level; document.getElementById('t-tone-label').innerText = t.tone;
+      document.getElementById('t-input-label').innerText = t.inputLabel; document.getElementById('t-output-label').innerText = t.outputLabel;
+      els.input.placeholder = t.inputPlaceholder; els.btn.innerText = state.loading ? t.loading : t.proofread;
+      
+      if (!state.output) { els.output.innerText = state.loading ? t.loading : t.outputPlaceholder; els.output.classList.remove('has-content'); } 
+      else { els.output.innerText = state.output; els.output.classList.add('has-content'); }
+    }
+
+    function renderChips() {
+      const t = UI[state.lang];
+      els.langGroup.innerHTML = LANGUAGES.map(l => `<button class="chip ${state.lang === l.code ? 'active' : ''}" data-type="lang" data-val="${l.code}">${l.label}</button>`).join('');
+      els.levelGroup.innerHTML = t.levels.map((lvl, i) => `<button class="chip ${state.levelIdx === i ? 'active' : ''}" data-type="level" data-val="${i}">${lvl}</button>`).join('');
+      els.toneGroup.innerHTML = t.tones.map((tn, i) => `<button class="chip ${state.toneIdx === i ? 'active' : ''}" data-type="tone" data-val="${i}">${tn}</button>`).join('');
+    }
+
+    function updateState(key, val) { state[key] = val; localStorage.setItem(`pr_${key}`, val); updateUI(); }
+    function updateUI() { renderText(); renderChips(); els.input.value = state.input; autoResize(els.input); els.btn.disabled = state.loading || !state.input.trim(); els.copyOutput.disabled = !state.output; }
+    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, 90) + 'px'; }
+
+    async function handleProofread() {
+      if (!state.input.trim() || state.loading) return;
+      
+      updateState('loading', true);
+      updateState('output', '');
+      
+      const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx])}\n\nOriginal text:\n${state.input}`;
+
+      try {
+        const res = await fetch('/api/proofread', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptText })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        
+        updateState('output', data.result);
+      } catch (err) {
+        updateState('output', "Error: " + err.message);
+      } finally {
+        updateState('loading', false);
+      }
+    }
+
+    els.input.addEventListener('input', (e) => { updateState('input', e.target.value); });
+    els.input.addEventListener('keydown', (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleProofread(); } });
+    els.btn.addEventListener('click', handleProofread);
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('chip')) {
+        const type = e.target.getAttribute('data-type'); const val = e.target.getAttribute('data-val');
+        if (type === 'lang') updateState('lang', val); if (type === 'level') updateState('levelIdx', parseInt(val)); if (type === 'tone') updateState('toneIdx', parseInt(val));
+      }
+    });
+
+    function copyText(text, btnId, svgId) {
+      if (!text) return; navigator.clipboard.writeText(text);
+      const btn = document.getElementById(btnId); const svg = document.getElementById(svgId);
+      btn.classList.add('copied'); svg.innerHTML = `<polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />`;
+      setTimeout(() => { btn.classList.remove('copied'); svg.innerHTML = `<rect x="5" y="1" width="9" height="11" rx="1.5" /><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0" />`; }, 1500);
+    }
+
+    els.copyInput.addEventListener('click', () => copyText(state.input, 'copy-input', 'svg-input'));
+    els.copyOutput.addEventListener('click', () => copyText(state.output, 'copy-output', 'svg-output'));
+
+    updateUI();
+  </script>
 </body>
 </html>
