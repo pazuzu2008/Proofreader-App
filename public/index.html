@@ -40,20 +40,14 @@
     .h-divider{width:1px;height:18px;background:var(--border);margin:0 5px;flex-shrink:0;}
 
     /* ── IN → OUT control ── */
-    .io-control{display:flex;align-items:center;gap:5px;margin-right:6px;}
-    .io-part{position:relative;}
-    .io-label{font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;text-align:center;margin-bottom:1px;line-height:1;}
-    .io-btn{display:flex;align-items:center;gap:3px;padding:3px 8px 3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap;}
-    .io-btn:hover{border-color:var(--text-muted);color:var(--text);}
-    .io-btn.active-lang{background:var(--active-bg);color:var(--active-text);border-color:var(--active-bg);}
-    .io-btn svg{opacity:.6;flex-shrink:0;}
-    .io-arrow{font-size:12px;color:var(--text-muted);line-height:1;margin-top:12px;flex-shrink:0;}
-    /* dropdown */
-    .io-dropdown{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:80px;}
-    .io-dropdown.open{display:flex;}
-    .io-opt{padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);transition:all .1s;white-space:nowrap;border:none;background:none;font-family:inherit;text-align:left;}
-    .io-opt:hover{background:var(--surface);color:var(--text);}
-    .io-opt.sel{background:var(--active-bg);color:var(--active-text);}
+    .io-control{display:flex;align-items:center;gap:6px;margin-right:6px;}
+    .io-group{display:flex;flex-direction:column;gap:3px;}
+    .io-label{font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;line-height:1;}
+    .io-pills{display:flex;gap:2px;background:var(--surface);border-radius:20px;padding:2px;}
+    .io-pill{padding:2px 8px;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);font-family:inherit;transition:all .12s;white-space:nowrap;}
+    .io-pill:hover{color:var(--text);}
+    .io-pill.active{background:var(--active-bg);color:var(--active-text);}
+    .io-arrow{font-size:13px;color:var(--text-muted);line-height:1;padding-top:14px;flex-shrink:0;}
 
     /* ── Icon buttons ── */
     .icon-btn{background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--text-muted);transition:color .15s,background .15s;position:relative;}
@@ -185,16 +179,16 @@
     </div>
     <div class="header-spacer"></div>
     <div class="header-right">
-      <!-- IN → OUT (cycle on click) -->
+      <!-- IN → OUT segmented -->
       <div class="io-control">
-        <div class="io-part">
+        <div class="io-group">
           <span class="io-label" id="io-in-lbl">in</span>
-          <button class="io-btn" id="io-in-btn"><span id="io-in-val">Auto</span></button>
+          <div class="io-pills" id="io-in-pills"></div>
         </div>
         <span class="io-arrow">→</span>
-        <div class="io-part">
+        <div class="io-group">
           <span class="io-label" id="io-out-lbl">out</span>
-          <button class="io-btn" id="io-out-btn"><span id="io-out-val">Same</span></button>
+          <div class="io-pills" id="io-out-pills"></div>
         </div>
       </div>
 
@@ -479,38 +473,47 @@ function renderUI(){
   s.lengthSteps.forEach((lbl,i)=>{ if(lLabels[i]) lLabels[i].textContent=lbl; });
   // update ctx apply button
   updateCtxUI();
-  // update io values
-  renderIOValues();
+  // update io pills
+  renderIOPills();
   renderUILangDropdown();
 }
 
-// ── IN / OUT cycle buttons ────────────────────────────────────────────────────
-function renderIOValues(){
+// ── IN / OUT pill groups ──────────────────────────────────────────────────────
+function renderIOPills(){
   const s = t();
-  const inOpt  = s.inOpts.find(o=>o.v===state.inputLang)  || s.inOpts[0];
-  const outOpt = s.outOpts.find(o=>o.v===state.outLang)   || s.outOpts[0];
-  document.getElementById('io-in-val').textContent  = inOpt.l;
-  document.getElementById('io-out-val').textContent = outOpt.l;
-  document.getElementById('io-in-btn').classList.toggle('active-lang', state.inputLang !== 'auto');
-  document.getElementById('io-out-btn').classList.toggle('active-lang', state.outLang  !== 'same');
+  document.getElementById('io-in-pills').innerHTML = s.inOpts.map(o=>
+    `<button class="io-pill ${state.inputLang===o.v?'active':''}" data-in="${o.v}">${o.l}</button>`
+  ).join('');
+  document.getElementById('io-out-pills').innerHTML = s.outOpts.map(o=>
+    `<button class="io-pill ${state.outLang===o.v?'active':''}" data-out="${o.v}">${o.l}</button>`
+  ).join('');
 }
 
-document.getElementById('io-in-btn').addEventListener('click', ()=>{
-  const opts = t().inOpts;
-  const idx  = opts.findIndex(o=>o.v===state.inputLang);
-  state.inputLang = opts[(idx+1) % opts.length].v;
+document.getElementById('io-in-pills').addEventListener('click', e=>{
+  const btn=e.target.closest('[data-in]'); if(!btn) return;
+  state.inputLang=btn.getAttribute('data-in');
   localStorage.setItem('pr_lang', state.inputLang);
-  renderIOValues();
+  renderIOPills();
 });
-document.getElementById('io-out-btn').addEventListener('click', ()=>{
-  const opts = t().outOpts;
-  const idx  = opts.findIndex(o=>o.v===state.outLang);
-  state.outLang = opts[(idx+1) % opts.length].v;
+document.getElementById('io-out-pills').addEventListener('click', e=>{
+  const btn=e.target.closest('[data-out]'); if(!btn) return;
+  state.outLang=btn.getAttribute('data-out');
   localStorage.setItem('pr_out_lang', state.outLang);
-  renderIOValues();
+  renderIOPills();
 });
 
 // ── UI language dropdown ──────────────────────────────────────────────────────
+let openDrop = null;
+function toggleDrop(dropEl, e){
+  e.stopPropagation();
+  if(openDrop && openDrop !== dropEl){ openDrop.classList.remove('open'); }
+  dropEl.classList.toggle('open');
+  openDrop = dropEl.classList.contains('open') ? dropEl : null;
+}
+document.addEventListener('click', ()=>{
+  if(openDrop){ openDrop.classList.remove('open'); openDrop=null; }
+});
+
 function renderUILangDropdown(){
   const s = t();
   document.getElementById('uilang-drop').innerHTML =
@@ -518,14 +521,28 @@ function renderUILangDropdown(){
 }
 
 document.getElementById('uilang-btn').addEventListener('click', e=>{
+  e.stopPropagation();
   toggleDrop(document.getElementById('uilang-drop'), e);
 });
 document.getElementById('uilang-drop').addEventListener('click', e=>{
   const btn=e.target.closest('[data-ul]'); if(!btn) return;
+  e.stopPropagation();
   state.uiLang=btn.getAttribute('data-ul');
   localStorage.setItem('pr_ui_lang', state.uiLang);
   document.getElementById('uilang-drop').classList.remove('open'); openDrop=null;
   renderUI();
+});
+
+// ── Settings: close on outside click ─────────────────────────────────────────
+document.addEventListener('click', e=>{
+  if(!settingsOpen) return;
+  const panel = els.settingsPanel;
+  const toggle = els.settingsToggle;
+  if(!panel.contains(e.target) && !toggle.contains(e.target)){
+    settingsOpen=false;
+    panel.classList.remove('open');
+    toggle.classList.remove('active');
+  }
 });
 
 // ── Sliders ───────────────────────────────────────────────────────────────────
@@ -843,7 +860,7 @@ micBtn.addEventListener('pointercancel',()=>{ if(isRecording&&!isLocked) stopRec
 micBtn.addEventListener('click',()=>{ if(isLocked) stopRecording(); });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-renderUI();
+renderUI();      // renders IO pills, uilang dropdown, all labels
 initSliders();
 renderChatHistory();
 </script>
