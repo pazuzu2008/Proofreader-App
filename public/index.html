@@ -9,465 +9,663 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #fafafa; color: #111; margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e5e5e5;
+      --text: #111111;
+      --text-muted: #999999;
+      --text-secondary: #555555;
+      --text-label: #bbbbbb;
+      --chip-bg: #ffffff;
+      --chip-border: #dddddd;
+      --chip-hover-border: #bbbbbb;
+      --chip-active-bg: #111111;
+      --chip-active-text: #ffffff;
+      --output-empty-bg: #f7f7f7;
+      --textarea-bg: #ffffff;
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      --btn-disabled-bg: #e5e5e5;
+      --btn-disabled-text: #999999;
+      --history-hover: #f7f7f7;
+      --icon-color: #aaaaaa;
+      --icon-hover: #111111;
+      --danger-hover: #ef4444;
+      --download-bg: #f0fdf4;
+      --download-border: #86efac;
+      --download-text: #16a34a;
+      --download-hover: #dcfce7;
+      --upload-label-color: #999;
+      --upload-label-hover: #555;
+      --word-badge-bg: #eff6ff;
+      --word-badge-border: #bfdbfe;
+      --word-badge-text: #3b82f6;
+      --section-label-color: #bbbbbb;
+    }
+
+    [data-theme="dark"] {
+      --bg: #111111;
+      --surface: #1c1c1c;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --text-muted: #666666;
+      --text-secondary: #aaaaaa;
+      --text-label: #444444;
+      --chip-bg: #1c1c1c;
+      --chip-border: #333333;
+      --chip-hover-border: #555555;
+      --chip-active-bg: #f0f0f0;
+      --chip-active-text: #111111;
+      --output-empty-bg: #171717;
+      --textarea-bg: #1c1c1c;
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      --btn-disabled-bg: #2a2a2a;
+      --btn-disabled-text: #555555;
+      --history-hover: #242424;
+      --icon-color: #555555;
+      --icon-hover: #f0f0f0;
+      --danger-hover: #ef4444;
+      --download-bg: #052e16;
+      --download-border: #166534;
+      --download-text: #4ade80;
+      --download-hover: #14532d;
+      --upload-label-color: #555;
+      --upload-label-hover: #999;
+      --word-badge-bg: #1e3a5f;
+      --word-badge-border: #1d4ed8;
+      --word-badge-text: #93c5fd;
+      --section-label-color: #444;
+    }
+
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; background: var(--bg); color: var(--text); margin: 0; padding: 0; transition: background 0.2s, color 0.2s; }
     .container { max-width: 680px; margin: 0 auto; padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 24px); }
+
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .header-left {}
     .header-title { font-size: clamp(20px, 5vw, 26px); font-weight: 700; margin: 0; letter-spacing: -0.5px; }
-    .header-subtitle { font-size: 13px; color: #999; margin: 4px 0 20px; }
-    .section-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .header-subtitle { font-size: 13px; color: var(--text-muted); margin: 4px 0 20px; }
+
+    .theme-toggle { background: none; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; padding: 6px 8px; display: flex; align-items: center; color: var(--text-secondary); transition: all 0.15s; margin-top: 2px; }
+    .theme-toggle:hover { border-color: var(--chip-hover-border); color: var(--text); }
+
+    .section-label { font-size: 11px; font-weight: 700; color: var(--section-label-color); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; box-shadow: var(--card-shadow); }
     .row { display: flex; align-items: center; gap: 10px; }
-    .row-label { font-size: 12px; font-weight: 600; color: #999; white-space: nowrap; width: 120px; flex-shrink: 0; }
+    .row-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; width: 120px; flex-shrink: 0; }
+
     .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
-    .chip { padding: 4px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #555; font-family: inherit; transition: all 0.15s ease; outline: none; }
-    .chip:hover { border-color: #bbb; }
-    .chip.active { background: #111; color: #fff; border-color: #111; font-weight: 500; }
+    .chip { padding: 4px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--text-secondary); font-family: inherit; transition: all 0.15s ease; outline: none; }
+    .chip:hover { border-color: var(--chip-hover-border); }
+    .chip.active { background: var(--chip-active-bg); color: var(--chip-active-text); border-color: var(--chip-active-bg); font-weight: 500; }
+
+    /* Context type chips — smaller */
+    .context-chip { padding: 3px 10px; font-size: 12px; }
+
     .field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .field-title { font-size: 13px; font-weight: 600; color: #555; }
+    .field-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
     .field-actions { display: flex; align-items: center; gap: 2px; }
-    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; color: #aaa; transition: color 0.2s; }
-    .icon-btn:hover:not(:disabled) { color: #111; }
-    .icon-btn.danger:hover:not(:disabled) { color: #ef4444; }
+
+    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; color: var(--icon-color); transition: color 0.2s; }
+    .icon-btn:hover:not(:disabled) { color: var(--icon-hover); }
+    .icon-btn.danger:hover:not(:disabled) { color: var(--danger-hover); }
     .icon-btn.copied { color: #22c55e !important; }
     .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: #fff; color: #111; font-family: inherit; transition: border-color 0.2s; display: block; margin-bottom: 14px; }
-    textarea:focus { border-color: #999; }
-    .main-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: #111; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all 0.2s; font-family: inherit; }
-    .main-btn:disabled { background: #e5e5e5; color: #999; cursor: not-allowed; }
-    .main-btn:hover:not(:disabled) { background: #333; }
-    .output-box { min-height: 90px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; background: #f7f7f7; font-size: 15px; line-height: 1.7; color: #bbb; white-space: pre-wrap; word-break: break-word; outline: none; }
-    .output-box.has-content { background: #fff; color: #111; }
-    .output-box.has-content:focus { border-color: #999; }
-    .output-box[contenteditable="true"]:empty:before { content: attr(data-placeholder); color: #bbb; }
 
-    /* Word upload */
-    .word-upload-area { margin-bottom: 10px; }
-    .word-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 12px; color: #3b82f6; font-weight: 500; }
-    .word-badge-remove { background: none; border: none; cursor: pointer; color: #93c5fd; padding: 0 0 0 4px; font-size: 16px; line-height: 1; display: flex; align-items: center; }
-    .word-badge-remove:hover { color: #3b82f6; }
-    .upload-label { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px dashed #ddd; border-radius: 8px; background: none; color: #999; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-    .upload-label:hover { border-color: #bbb; color: #555; }
+    textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; line-height: 1.7; resize: none; outline: none; overflow: hidden; background: var(--textarea-bg); color: var(--text); font-family: inherit; transition: border-color 0.2s, background 0.2s; display: block; margin-bottom: 14px; }
+    textarea::placeholder { color: var(--text-muted); }
+    textarea:focus { border-color: var(--text-muted); }
 
-    /* Download btn */
-    .download-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #16a34a; cursor: pointer; font-family: inherit; transition: all 0.15s; margin-right: 4px; }
-    .download-btn:hover { background: #dcfce7; }
+    .main-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--chip-active-bg); color: var(--chip-active-text); font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 14px; transition: all 0.2s; font-family: inherit; }
+    .main-btn:disabled { background: var(--btn-disabled-bg); color: var(--btn-disabled-text); cursor: not-allowed; }
+    .main-btn:hover:not(:disabled) { opacity: 0.85; }
+
+    .output-box { min-height: 90px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--output-empty-bg); font-size: 15px; line-height: 1.7; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; outline: none; transition: background 0.2s, border-color 0.2s; }
+    .output-box.has-content { background: var(--surface); color: var(--text); }
+    .output-box.has-content:focus { border-color: var(--text-muted); }
+    .output-box[contenteditable="true"]:empty:before { content: attr(data-placeholder); color: var(--text-muted); }
+
+    /* File upload */
+    .file-upload-area { margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .file-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--word-badge-bg); border: 1px solid var(--word-badge-border); border-radius: 8px; font-size: 12px; color: var(--word-badge-text); font-weight: 500; }
+    .file-badge-remove { background: none; border: none; cursor: pointer; color: var(--word-badge-text); padding: 0 0 0 4px; font-size: 16px; line-height: 1; opacity: 0.6; display: flex; align-items: center; }
+    .file-badge-remove:hover { opacity: 1; }
+    .upload-label { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px dashed var(--border); border-radius: 8px; background: none; color: var(--upload-label-color); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .upload-label:hover { border-color: var(--chip-hover-border); color: var(--upload-label-hover); }
+
+    /* Action buttons */
+    .download-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: var(--download-bg); border: 1px solid var(--download-border); border-radius: 8px; font-size: 12px; color: var(--download-text); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .download-btn:hover { background: var(--download-hover); }
 
     /* History */
-    .history-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e5e5; }
+    .history-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
     .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .history-clear { background: none; border: none; font-size: 11px; color: #bbb; cursor: pointer; font-family: inherit; padding: 0; transition: color 0.15s; }
-    .history-clear:hover { color: #ef4444; }
+    .history-clear { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; font-family: inherit; padding: 0; transition: color 0.15s; }
+    .history-clear:hover { color: var(--danger-hover); }
     .history-list { display: flex; flex-direction: column; gap: 6px; }
-    .history-item { padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
-    .history-item:hover { border-color: #bbb; background: #f7f7f7; }
-    .history-snippet { font-size: 13px; color: #444; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .history-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+    .history-item:hover { border-color: var(--chip-hover-border); background: var(--history-hover); }
+    .history-snippet { font-size: 13px; color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .history-lang { font-size: 13px; }
-    .history-time { font-size: 11px; color: #bbb; }
+    .history-time { font-size: 11px; color: var(--text-muted); }
+    .history-copy { background: none; border: none; cursor: pointer; padding: 3px; color: var(--icon-color); border-radius: 5px; display: flex; align-items: center; flex-shrink: 0; transition: color 0.15s; }
+    .history-copy:hover { color: var(--icon-hover); }
+    .history-copy.copied { color: #22c55e !important; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="header-title" id="t-title">Proofreader</h1>
-    <p class="header-subtitle" id="t-subtitle">Paste your text and get it polished instantly</p>
-
-    <div class="section-label" id="t-settings">SETTINGS</div>
-    <div class="card">
-      <div class="row">
-        <span class="row-label" id="t-lang-label">Language</span>
-        <div class="chip-group" id="lang-group"></div>
-      </div>
-      <div class="row">
-        <span class="row-label" id="t-level-label">Language Level</span>
-        <div class="chip-group" id="level-group"></div>
-      </div>
-      <div class="row">
-        <span class="row-label" id="t-tone-label">Tone</span>
-        <div class="chip-group" id="tone-group"></div>
-      </div>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1 class="header-title" id="t-title">Proofreader</h1>
+      <p class="header-subtitle" id="t-subtitle">Paste your text and get it polished instantly</p>
     </div>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <svg id="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </div>
 
-    <!-- Word upload -->
-    <div class="word-upload-area" id="word-upload-area"></div>
-
-    <div class="field-header">
-      <span class="field-title" id="t-input-label">Your text</span>
-      <div class="field-actions">
-        <button class="icon-btn danger" id="clear-input" title="Clear">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-            <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
-          </svg>
-        </button>
-        <button class="icon-btn" id="copy-input" title="Copy">
-          <svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
-          </svg>
-        </button>
-      </div>
+  <div class="section-label" id="t-settings">SETTINGS</div>
+  <div class="card">
+    <div class="row">
+      <span class="row-label" id="t-lang-label">Language</span>
+      <div class="chip-group" id="lang-group"></div>
     </div>
-    <textarea id="input-text" rows="3"></textarea>
-
-    <button class="main-btn" id="proofread-btn" disabled>Proofread</button>
-
-    <div class="field-header">
-      <span class="field-title" id="t-output-label">Proofread result</span>
-      <div class="field-actions" id="output-actions"></div>
+    <div class="row">
+      <span class="row-label" id="t-level-label">Language Level</span>
+      <div class="chip-group" id="level-group"></div>
     </div>
-    <div class="output-box" id="output-text" contenteditable="false"></div>
-
-    <!-- History -->
-    <div class="history-section" id="history-section" style="display:none">
-      <div class="history-header">
-        <div class="section-label" style="margin:0" id="t-recent">RECENT</div>
-        <button class="history-clear" id="history-clear-btn">Clear history</button>
-      </div>
-      <div class="history-list" id="history-list"></div>
+    <div class="row">
+      <span class="row-label" id="t-tone-label">Tone</span>
+      <div class="chip-group" id="tone-group"></div>
+    </div>
+    <div class="row" id="context-row">
+      <span class="row-label" id="t-context-label">Context</span>
+      <div class="chip-group" id="context-group"></div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.min.js"></script>
-  <script>
-    const LANGUAGES = [{ code: "en", label: "🇬🇧 English" }, { code: "ru", label: "🇷🇺 Русский" }, { code: "uk", label: "🇺🇦 Українська" }];
-    const TONE_EN = ["Formal", "Neutral", "Casual", "Friendly"];
-    const LEVEL_EN = ["Simple", "Standard", "Advanced"];
-    const LANG_FLAG = { en: "🇬🇧", ru: "🇷🇺", uk: "🇺🇦" };
+  <!-- File upload -->
+  <div class="file-upload-area" id="file-upload-area"></div>
 
-    const UI = {
-      en: { title: "Proofreader", subtitle: "Paste your text and get it polished instantly", inputLabel: "Your text", outputLabel: "Proofread result", inputPlaceholder: "Type or paste your text here...", outputPlaceholder: "Result will appear here...", proofread: "Proofread", tone: "Tone", level: "Language Level", loading: "Proofreading...", language: "Language", settings: "Settings", tones: ["Formal", "Neutral", "Casual", "Friendly"], levels: ["Simple", "Standard", "Advanced"] },
-      ru: { title: "Пруфридер", subtitle: "Вставьте текст и получите исправленную версию мгновенно", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введите или вставьте текст сюда...", outputPlaceholder: "Результат появится здесь...", proofread: "Проверить", tone: "Тон", level: "Уровень языка", loading: "Проверяем...", language: "Язык", settings: "Настройки", tones: ["Официальный", "Нейтральный", "Непринуждённый", "Дружелюбный"], levels: ["Простой", "Стандартный", "Продвинутый"] },
-      uk: { title: "Пруфрідер", subtitle: "Вставте текст і отримайте виправлену версію миттєво", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введіть або вставте текст сюди...", outputPlaceholder: "Результат з'явиться тут...", proofread: "Перевірити", tone: "Тон", level: "Рівень мови", loading: "Перевіряємо...", language: "Мова", settings: "Налаштування", tones: ["Офіційний", "Нейтральний", "Невимушений", "Дружній"], levels: ["Простий", "Стандартний", "Просунутий"] }
-    };
+  <div class="field-header">
+    <span class="field-title" id="t-input-label">Your text</span>
+    <div class="field-actions">
+      <button class="icon-btn danger" id="clear-input" title="Clear input">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="copy-input" title="Copy">
+        <svg id="svg-input" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <textarea id="input-text" rows="3"></textarea>
 
-    const SYSTEM_PROMPT = {
-      en: (tone, level) => `You are a professional proofreader. Proofread and correct the user's text. Tone: ${tone}. Language level: ${level}. Return ONLY the corrected text in English, no explanations or comments.`,
-      ru: (tone, level) => `Ты профессиональный корректор. Проверь и исправь текст пользователя. Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,
-      uk: (tone, level) => `Ти професійний коректор. Перевір та виправ текст користувача. Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,
-    };
+  <button class="main-btn" id="proofread-btn" disabled>Proofread</button>
 
-    // ── History ──────────────────────────────────────────
-    const HISTORY_KEY = 'pr_history';
-    const MAX_HISTORY = 7;
+  <div class="field-header">
+    <span class="field-title" id="t-output-label">Proofread result</span>
+    <div class="field-actions" id="output-actions"></div>
+  </div>
+  <div class="output-box" id="output-text" contenteditable="false"></div>
 
-    function loadHistory() {
-      try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+  <!-- History -->
+  <div class="history-section" id="history-section" style="display:none">
+    <div class="history-header">
+      <div class="section-label" style="margin:0" id="t-recent">RECENT</div>
+      <button class="history-clear" id="history-clear-btn">Clear history</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<!-- mammoth for .docx -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<!-- pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- docx for generation -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.min.js"></script>
+
+<script>
+  // ── PDF.js worker ───────────────────────────────────────
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  // ── Constants ────────────────────────────────────────────
+  const LANGUAGES = [
+    { code: "en", label: "🇬🇧 English" },
+    { code: "ru", label: "🇷🇺 Русский" },
+    { code: "uk", label: "🇺🇦 Українська" }
+  ];
+  const TONE_EN   = ["Formal", "Neutral", "Casual", "Friendly"];
+  const LEVEL_EN  = ["Simple", "Standard", "Advanced"];
+  const LANG_FLAG = { en: "🇬🇧", ru: "🇷🇺", uk: "🇺🇦" };
+  const MAX_HISTORY = 20;
+  const HISTORY_KEY = 'pr_history';
+
+  const CONTEXT_OPTIONS = {
+    en: [{ val: "", label: "None" }, { val: "Email", label: "Email" }, { val: "LinkedIn Post", label: "LinkedIn" }, { val: "Press Release", label: "Press release" }, { val: "Contract", label: "Contract" }, { val: "Social Post", label: "Social post" }],
+    ru: [{ val: "", label: "Нет" }, { val: "Email", label: "Эл. письмо" }, { val: "LinkedIn Post", label: "LinkedIn" }, { val: "Press Release", label: "Пресс-релиз" }, { val: "Contract", label: "Договор" }, { val: "Social Post", label: "Соцсети" }],
+    uk: [{ val: "", label: "Немає" }, { val: "Email", label: "Ел. лист" }, { val: "LinkedIn Post", label: "LinkedIn" }, { val: "Press Release", label: "Прес-реліз" }, { val: "Contract", label: "Договір" }, { val: "Social Post", label: "Соцмережі" }],
+  };
+
+  const UI = {
+    en: { title: "Proofreader", subtitle: "Paste your text and get it polished instantly", inputLabel: "Your text", outputLabel: "Proofread result", inputPlaceholder: "Type or paste your text here...", outputPlaceholder: "Result will appear here...", proofread: "Proofread", tone: "Tone", level: "Language Level", loading: "Proofreading...", language: "Language", settings: "Settings", context: "Context", tones: ["Formal", "Neutral", "Casual", "Friendly"], levels: ["Simple", "Standard", "Advanced"] },
+    ru: { title: "Пруфридер", subtitle: "Вставьте текст и получите исправленную версию мгновенно", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введите или вставьте текст сюда...", outputPlaceholder: "Результат появится здесь...", proofread: "Проверить", tone: "Тон", level: "Уровень языка", loading: "Проверяем...", language: "Язык", settings: "Настройки", context: "Контекст", tones: ["Официальный", "Нейтральный", "Непринуждённый", "Дружелюбный"], levels: ["Простой", "Стандартный", "Продвинутый"] },
+    uk: { title: "Пруфрідер", subtitle: "Вставте текст і отримайте виправлену версію миттєво", inputLabel: "Ваш текст", outputLabel: "Результат", inputPlaceholder: "Введіть або вставте текст сюди...", outputPlaceholder: "Результат з'явиться тут...", proofread: "Перевірити", tone: "Тон", level: "Рівень мови", loading: "Перевіряємо...", language: "Мова", settings: "Налаштування", context: "Контекст", tones: ["Офіційний", "Нейтральний", "Невимушений", "Дружній"], levels: ["Простий", "Стандартний", "Просунутий"] }
+  };
+
+  const SYSTEM_PROMPT = {
+    en: (tone, level, ctx) => `You are a professional proofreader. Proofread and correct the user's text.${ctx ? ` Document type: ${ctx}.` : ''} Tone: ${tone}. Language level: ${level}. Return ONLY the corrected text in English, no explanations or comments.`,
+    ru: (tone, level, ctx) => `Ты профессиональный корректор. Проверь и исправь текст пользователя.${ctx ? ` Тип документа: ${ctx}.` : ''} Тон: ${tone}. Уровень языка: ${level}. Верни ТОЛЬКО исправленный текст на русском языке, без объяснений.`,
+    uk: (tone, level, ctx) => `Ти професійний коректор. Перевір та виправ текст користувача.${ctx ? ` Тип документа: ${ctx}.` : ''} Тон: ${tone}. Рівень мови: ${level}. Поверни ЛИШЕ виправлений текст українською мовою, без пояснень.`,
+  };
+
+  // ── Theme ─────────────────────────────────────────────────
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let theme = localStorage.getItem('pr_theme') || (prefersDark ? 'dark' : 'light');
+
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    const icon = document.getElementById('theme-icon');
+    if (t === 'dark') {
+      icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+    } else {
+      icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
     }
+  }
+  applyTheme(theme);
 
-    function saveToHistory(input, output, lang, toneIdx, levelIdx) {
-      let h = loadHistory().filter(x => x.input !== input);
-      h.unshift({ input, output, lang, toneIdx, levelIdx, ts: Date.now() });
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, MAX_HISTORY)));
-    }
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('pr_theme', theme);
+    applyTheme(theme);
+  });
 
-    function timeAgo(ts) {
-      const m = Math.floor((Date.now() - ts) / 60000);
-      if (m < 1) return 'just now';
-      if (m < 60) return `${m}m ago`;
-      const h = Math.floor(m / 60);
-      if (h < 24) return `${h}h ago`;
-      return `${Math.floor(h / 24)}d ago`;
-    }
+  // ── State ─────────────────────────────────────────────────
+  let state = {
+    lang:       localStorage.getItem("pr_lang")    || "en",
+    toneIdx:    parseInt(localStorage.getItem("pr_tone"))  || 1,
+    levelIdx:   parseInt(localStorage.getItem("pr_level")) || 1,
+    contextVal: localStorage.getItem("pr_ctx")     || "",
+    input:      localStorage.getItem("pr_input")   || "",
+    output:     localStorage.getItem("pr_output")  || "",
+    loading: false
+  };
 
-    function renderHistory() {
-      const h = loadHistory();
-      const section = document.getElementById('history-section');
-      const list = document.getElementById('history-list');
-      if (!h.length) { section.style.display = 'none'; return; }
-      section.style.display = 'block';
-      list.innerHTML = h.map((item, i) => `
-        <div class="history-item" data-idx="${i}">
-          <span class="history-snippet">${item.input.slice(0, 65).replace(/</g, '&lt;')}${item.input.length > 65 ? '…' : ''}</span>
-          <div class="history-meta">
-            <span class="history-lang">${LANG_FLAG[item.lang] || ''}</span>
-            <span class="history-time">${timeAgo(item.ts)}</span>
-          </div>
+  let uploadedFileName  = null;
+  let uploadedFileType  = null; // 'docx' | 'pdf'
+  let isOutputFocused   = false;
+
+  const els = {
+    input:        document.getElementById('input-text'),
+    output:       document.getElementById('output-text'),
+    btn:          document.getElementById('proofread-btn'),
+    langGroup:    document.getElementById('lang-group'),
+    levelGroup:   document.getElementById('level-group'),
+    toneGroup:    document.getElementById('tone-group'),
+    contextGroup: document.getElementById('context-group'),
+    copyInput:    document.getElementById('copy-input'),
+    clearInput:   document.getElementById('clear-input'),
+    outputActions:document.getElementById('output-actions'),
+    fileUploadArea: document.getElementById('file-upload-area'),
+  };
+
+  // ── History ───────────────────────────────────────────────
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+  }
+  function saveToHistory(input, output, lang, toneIdx, levelIdx, contextVal) {
+    let h = loadHistory().filter(x => x.input !== input);
+    h.unshift({ input, output, lang, toneIdx, levelIdx, contextVal, ts: Date.now() });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, MAX_HISTORY)));
+  }
+  function timeAgo(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  }
+  function renderHistory() {
+    const h = loadHistory();
+    const section = document.getElementById('history-section');
+    const list    = document.getElementById('history-list');
+    if (!h.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = h.map((item, i) => `
+      <div class="history-item" data-idx="${i}">
+        <span class="history-snippet">${(item.input || '').slice(0, 60).replace(/</g,'&lt;')}${item.input && item.input.length > 60 ? '…' : ''}</span>
+        <div class="history-meta">
+          <span class="history-lang">${LANG_FLAG[item.lang] || ''}</span>
+          <span class="history-time">${timeAgo(item.ts)}</span>
+          <button class="history-copy" data-copy-idx="${i}" title="Copy result">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
+            </svg>
+          </button>
         </div>
-      `).join('');
+      </div>
+    `).join('');
+  }
+
+  // ── File upload (docx + pdf) ──────────────────────────────
+  function renderFileUploadArea() {
+    const area = els.fileUploadArea;
+    if (uploadedFileName) {
+      area.innerHTML = `
+        <div class="file-badge">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+          ${uploadedFileName}
+          <button class="file-badge-remove" id="remove-file" title="Remove file">×</button>
+        </div>`;
+      document.getElementById('remove-file').addEventListener('click', () => {
+        uploadedFileName = null; uploadedFileType = null;
+        renderFileUploadArea(); renderOutputActions();
+      });
+    } else {
+      area.innerHTML = `
+        <label class="upload-label" title="Upload .docx or .pdf">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+          Upload .docx / .pdf
+          <input type="file" accept=".docx,.pdf" id="file-input" style="display:none">
+        </label>`;
+      document.getElementById('file-input').addEventListener('change', handleFileUpload);
     }
+  }
 
-    // ── State ─────────────────────────────────────────────
-    let state = {
-      lang: localStorage.getItem("pr_lang") || "en",
-      toneIdx: parseInt(localStorage.getItem("pr_tone")) || 1,
-      levelIdx: parseInt(localStorage.getItem("pr_level")) || 1,
-      input: localStorage.getItem("pr_input") || "",
-      output: localStorage.getItem("pr_output") || "",
-      loading: false
-    };
-
-    let wordFileName = null;
-    let isOutputFocused = false;
-
-    const els = {
-      input: document.getElementById('input-text'),
-      output: document.getElementById('output-text'),
-      btn: document.getElementById('proofread-btn'),
-      langGroup: document.getElementById('lang-group'),
-      levelGroup: document.getElementById('level-group'),
-      toneGroup: document.getElementById('tone-group'),
-      copyInput: document.getElementById('copy-input'),
-      clearInput: document.getElementById('clear-input'),
-      outputActions: document.getElementById('output-actions'),
-      wordUploadArea: document.getElementById('word-upload-area'),
-    };
-
-    // ── Word upload/download ──────────────────────────────
-    function renderWordUploadArea() {
-      if (wordFileName) {
-        els.wordUploadArea.innerHTML = `
-          <div class="word-badge">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-            ${wordFileName}
-            <button class="word-badge-remove" id="remove-word" title="Remove file">×</button>
-          </div>`;
-        document.getElementById('remove-word').addEventListener('click', () => {
-          wordFileName = null;
-          renderWordUploadArea();
-          renderOutputActions();
-        });
-      } else {
-        els.wordUploadArea.innerHTML = `
-          <label class="upload-label" title="Upload a .docx file to proofread it">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-            Upload .docx
-            <input type="file" accept=".docx" id="word-file-input" style="display:none">
-          </label>`;
-        document.getElementById('word-file-input').addEventListener('change', handleWordUpload);
-      }
-    }
-
-    async function handleWordUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      try {
-        wordFileName = file.name;
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        state.input = result.value.trim();
-        localStorage.setItem('pr_input', state.input);
-        renderWordUploadArea();
-        updateUI();
-      } catch (err) {
-        alert('Could not read file: ' + err.message);
-        wordFileName = null;
-        renderWordUploadArea();
-      }
-    }
-
-    async function downloadCorrectedWord() {
-      if (!state.output || !window.docx) return;
-      const { Document, Paragraph, TextRun, Packer } = window.docx;
-      const paragraphs = state.output.split('\n').map(line =>
-        new Paragraph({ children: [new TextRun(line || '')] })
-      );
-      const doc = new Document({ sections: [{ children: paragraphs }] });
-      const blob = await Packer.toBlob(doc);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = wordFileName.replace(/\.docx$/i, '_proofread.docx');
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // ── Output actions (dynamic) ──────────────────────────
-    function renderOutputActions() {
-      const hasOutput = !!state.output;
-      const showDownload = wordFileName && hasOutput && !state.loading;
-      els.outputActions.innerHTML = `
-        ${showDownload ? `<button class="download-btn" id="download-word-btn">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8M5 8l3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke-linecap="round"/></svg>
-          Download .docx
-        </button>` : ''}
-        <button class="icon-btn" id="copy-output" ${!hasOutput ? 'disabled' : ''} title="Copy result">
-          <svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
-          </svg>
-        </button>`;
-      document.getElementById('copy-output').addEventListener('click', () => copyText(state.output, 'copy-output', 'svg-output'));
-      const dlBtn = document.getElementById('download-word-btn');
-      if (dlBtn) dlBtn.addEventListener('click', downloadCorrectedWord);
-    }
-
-    // ── Render ────────────────────────────────────────────
-    function renderText() {
-      const t = UI[state.lang];
-      document.getElementById('t-title').innerText = t.title;
-      document.getElementById('t-subtitle').innerText = t.subtitle;
-      document.getElementById('t-settings').innerText = t.settings;
-      document.getElementById('t-lang-label').innerText = t.language;
-      document.getElementById('t-level-label').innerText = t.level;
-      document.getElementById('t-tone-label').innerText = t.tone;
-      document.getElementById('t-input-label').innerText = t.inputLabel;
-      document.getElementById('t-output-label').innerText = t.outputLabel;
-      els.input.placeholder = t.inputPlaceholder;
-      els.btn.innerText = state.loading ? t.loading : t.proofread;
-
-      if (!isOutputFocused) {
-        if (!state.output) {
-          els.output.innerText = state.loading ? t.loading : t.outputPlaceholder;
-          els.output.classList.remove('has-content');
-          els.output.contentEditable = 'false';
-        } else {
-          els.output.innerText = state.output;
-          els.output.classList.add('has-content');
-          els.output.contentEditable = state.loading ? 'false' : 'true';
+  async function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      let text = '';
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        uploadedFileType = 'pdf';
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page    = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + '\n';
         }
+      } else {
+        uploadedFileType = 'docx';
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
       }
-    }
-
-    function renderChips() {
-      const t = UI[state.lang];
-      els.langGroup.innerHTML = LANGUAGES.map(l => `<button class="chip ${state.lang === l.code ? 'active' : ''}" data-type="lang" data-val="${l.code}">${l.label}</button>`).join('');
-      els.levelGroup.innerHTML = t.levels.map((lvl, i) => `<button class="chip ${state.levelIdx === i ? 'active' : ''}" data-type="level" data-val="${i}">${lvl}</button>`).join('');
-      els.toneGroup.innerHTML = t.tones.map((tn, i) => `<button class="chip ${state.toneIdx === i ? 'active' : ''}" data-type="tone" data-val="${i}">${tn}</button>`).join('');
-    }
-
-    function updateUI() {
-      renderText();
-      renderChips();
-      renderOutputActions();
-      els.input.value = state.input;
-      autoResize(els.input);
-      els.btn.disabled = state.loading || !state.input.trim();
-      els.clearInput.disabled = !state.input && !state.output;
-    }
-
-    function autoResize(el) {
-      el.style.height = 'auto';
-      el.style.height = Math.max(el.scrollHeight, 90) + 'px';
-    }
-
-    // ── Proofread ─────────────────────────────────────────
-    async function handleProofread() {
-      if (!state.input.trim() || state.loading) return;
-      state.loading = true;
-      state.output = '';
-      updateUI();
-
-      const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx])}\n\nOriginal text:\n${state.input}`;
-      try {
-        const res = await fetch('/api/proofread', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptText, lang: state.lang })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Server error');
-        state.output = data.result;
-        localStorage.setItem('pr_output', data.result);
-        saveToHistory(state.input, data.result, state.lang, state.toneIdx, state.levelIdx);
-        renderHistory();
-      } catch (err) {
-        state.output = "Error: " + err.message;
-      } finally {
-        state.loading = false;
-        updateUI();
-      }
-    }
-
-    // ── Copy ──────────────────────────────────────────────
-    function copyText(text, btnId, svgId) {
-      if (!text) return;
-      navigator.clipboard.writeText(text);
-      const btn = document.getElementById(btnId);
-      const svg = document.getElementById(svgId);
-      if (!btn || !svg) return;
-      btn.classList.add('copied');
-      svg.innerHTML = `<polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        svg.innerHTML = `<rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>`;
-      }, 1500);
-    }
-
-    // ── Event listeners ───────────────────────────────────
-    els.input.addEventListener('input', (e) => {
-      state.input = e.target.value;
+      uploadedFileName = file.name;
+      state.input = text.trim();
       localStorage.setItem('pr_input', state.input);
-      autoResize(els.input);
-      els.btn.disabled = state.loading || !state.input.trim();
-      els.clearInput.disabled = !state.input && !state.output;
-    });
-    els.input.addEventListener('keydown', (e) => {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleProofread(); }
-    });
-
-    els.btn.addEventListener('click', handleProofread);
-
-    els.clearInput.addEventListener('click', () => {
-      wordFileName = null;
-      state.input = '';
-      state.output = '';
-      localStorage.removeItem('pr_input');
-      localStorage.removeItem('pr_output');
-      renderWordUploadArea();
+      renderFileUploadArea();
       updateUI();
-    });
+    } catch (err) {
+      alert('Could not read file: ' + err.message);
+      uploadedFileName = null; uploadedFileType = null;
+      renderFileUploadArea();
+    }
+  }
 
-    els.copyInput.addEventListener('click', () => copyText(state.input, 'copy-input', 'svg-input'));
+  async function downloadCorrectedWord() {
+    if (!state.output || !window.docx) return;
+    const { Document, Paragraph, TextRun, Packer } = window.docx;
+    const paragraphs = state.output.split('\n').map(line =>
+      new Paragraph({ children: [new TextRun(line || '')] })
+    );
+    const doc  = new Document({ sections: [{ children: paragraphs }] });
+    const blob = await Packer.toBlob(doc);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = (uploadedFileName || 'document').replace(/\.(docx|pdf)$/i, '_proofread.docx');
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-    // Output inline editing
-    els.output.addEventListener('focus', () => { isOutputFocused = true; });
-    els.output.addEventListener('blur', () => {
-      isOutputFocused = false;
-      if (els.output.contentEditable === 'true') {
-        state.output = els.output.innerText.trim();
-        localStorage.setItem('pr_output', state.output);
-        renderOutputActions();
+  // ── Output actions ────────────────────────────────────────
+  function renderOutputActions() {
+    const hasOutput  = !!state.output;
+    const showDownload = uploadedFileName && hasOutput && !state.loading;
+    const showRetry  = hasOutput && !state.loading && state.input.trim();
+
+    els.outputActions.innerHTML = `
+      ${showDownload ? `<button class="download-btn" id="download-btn">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 8l3 3 3-3"/><path d="M3 13h10" stroke-linecap="round"/></svg>
+        Download .docx
+      </button>` : ''}
+      ${showRetry ? `<button class="icon-btn" id="retry-btn" title="Retry">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.7"/></svg>
+      </button>` : ''}
+      <button class="icon-btn danger" id="clear-output" ${!hasOutput ? 'disabled' : ''} title="Clear result">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="copy-output" ${!hasOutput ? 'disabled' : ''} title="Copy result">
+        <svg id="svg-output" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
+        </svg>
+      </button>`;
+
+    document.getElementById('copy-output').addEventListener('click', () => copyText(state.output, 'copy-output', 'svg-output'));
+    document.getElementById('clear-output').addEventListener('click', clearOutput);
+    const dlBtn = document.getElementById('download-btn');
+    if (dlBtn) dlBtn.addEventListener('click', downloadCorrectedWord);
+    const retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) retryBtn.addEventListener('click', handleProofread);
+  }
+
+  // ── Render ────────────────────────────────────────────────
+  function renderText() {
+    const t = UI[state.lang];
+    document.getElementById('t-title').innerText      = t.title;
+    document.getElementById('t-subtitle').innerText   = t.subtitle;
+    document.getElementById('t-settings').innerText   = t.settings;
+    document.getElementById('t-lang-label').innerText = t.language;
+    document.getElementById('t-level-label').innerText= t.level;
+    document.getElementById('t-tone-label').innerText = t.tone;
+    document.getElementById('t-context-label').innerText = t.context;
+    document.getElementById('t-input-label').innerText= t.inputLabel;
+    document.getElementById('t-output-label').innerText = t.outputLabel;
+    els.input.placeholder = t.inputPlaceholder;
+    els.btn.innerText = state.loading ? t.loading : t.proofread;
+
+    if (!isOutputFocused) {
+      if (!state.output) {
+        els.output.innerText = state.loading ? t.loading : t.outputPlaceholder;
+        els.output.classList.remove('has-content');
+        els.output.contentEditable = 'false';
+      } else {
+        els.output.innerText = state.output;
+        els.output.classList.add('has-content');
+        els.output.contentEditable = state.loading ? 'false' : 'true';
       }
-    });
-    els.output.addEventListener('input', () => {
-      state.output = els.output.innerText;
-    });
-    // Prevent enter from inserting <div> in contenteditable
-    els.output.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        document.execCommand('insertLineBreak');
-      }
-    });
+    }
+  }
 
-    // Chips
-    document.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('chip')) return;
-      const type = e.target.getAttribute('data-type');
-      const val = e.target.getAttribute('data-val');
-      if (type === 'lang') { state.lang = val; localStorage.setItem('pr_lang', val); }
-      if (type === 'level') { state.levelIdx = parseInt(val); localStorage.setItem('pr_level', val); }
-      if (type === 'tone') { state.toneIdx = parseInt(val); localStorage.setItem('pr_tone', val); }
-      updateUI();
-    });
+  function renderChips() {
+    const t = UI[state.lang];
+    els.langGroup.innerHTML    = LANGUAGES.map(l => `<button class="chip ${state.lang === l.code ? 'active' : ''}" data-type="lang" data-val="${l.code}">${l.label}</button>`).join('');
+    els.levelGroup.innerHTML   = t.levels.map((lvl, i) => `<button class="chip ${state.levelIdx === i ? 'active' : ''}" data-type="level" data-val="${i}">${lvl}</button>`).join('');
+    els.toneGroup.innerHTML    = t.tones.map((tn, i) => `<button class="chip ${state.toneIdx === i ? 'active' : ''}" data-type="tone" data-val="${i}">${tn}</button>`).join('');
+    els.contextGroup.innerHTML = CONTEXT_OPTIONS[state.lang].map(opt => `<button class="chip context-chip ${state.contextVal === opt.val ? 'active' : ''}" data-type="ctx" data-val="${opt.val}">${opt.label}</button>`).join('');
+  }
 
-    // History
-    document.getElementById('history-clear-btn').addEventListener('click', () => {
-      localStorage.removeItem(HISTORY_KEY);
-      renderHistory();
-    });
-    document.getElementById('history-list').addEventListener('click', (e) => {
-      const item = e.target.closest('.history-item');
-      if (!item) return;
-      const entry = loadHistory()[parseInt(item.getAttribute('data-idx'))];
-      if (!entry) return;
-      state.lang = entry.lang;
-      state.toneIdx = entry.toneIdx;
-      state.levelIdx = entry.levelIdx;
-      state.input = entry.input;
-      state.output = entry.output;
-      localStorage.setItem('pr_lang', entry.lang);
-      localStorage.setItem('pr_tone', entry.toneIdx);
-      localStorage.setItem('pr_level', entry.levelIdx);
-      localStorage.setItem('pr_input', entry.input);
-      localStorage.setItem('pr_output', entry.output);
-      wordFileName = null;
-      renderWordUploadArea();
-      updateUI();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+  function updateUI() {
+    renderText();
+    renderChips();
+    renderOutputActions();
+    els.input.value = state.input;
+    autoResize(els.input);
+    els.btn.disabled = state.loading || !state.input.trim();
+  }
 
-    // ── Init ──────────────────────────────────────────────
-    renderWordUploadArea();
-    renderHistory();
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.max(el.scrollHeight, 90) + 'px';
+  }
+
+  function clearOutput() {
+    state.output = '';
+    localStorage.removeItem('pr_output');
     updateUI();
-  </script>
+  }
+
+  // ── Proofread ─────────────────────────────────────────────
+  async function handleProofread() {
+    if (!state.input.trim() || state.loading) return;
+    state.loading = true;
+    state.output  = '';
+    updateUI();
+
+    const ctxLabel = state.contextVal;
+    const promptText = `${SYSTEM_PROMPT[state.lang](TONE_EN[state.toneIdx], LEVEL_EN[state.levelIdx], ctxLabel)}\n\nOriginal text:\n${state.input}`;
+    try {
+      const res  = await fetch('/api/proofread', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText, lang: state.lang })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+      state.output = data.result;
+      localStorage.setItem('pr_output', data.result);
+      saveToHistory(state.input, data.result, state.lang, state.toneIdx, state.levelIdx, state.contextVal);
+      renderHistory();
+    } catch (err) {
+      state.output = "Error: " + err.message;
+    } finally {
+      state.loading = false;
+      updateUI();
+    }
+  }
+
+  // ── Copy ──────────────────────────────────────────────────
+  function copyText(text, btnId, svgId) {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    const btn = document.getElementById(btnId);
+    const svg = document.getElementById(svgId);
+    if (!btn) return;
+    btn.classList.add('copied');
+    if (svg) svg.innerHTML = `<polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      if (svg) svg.innerHTML = `<rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>`;
+    }, 1500);
+  }
+
+  function flashCopied(btn) {
+    btn.classList.add('copied');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,8 6,12 14,4" fill="none"/></svg>`;
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 1500);
+  }
+
+  // ── Event listeners ───────────────────────────────────────
+  els.input.addEventListener('input', (e) => {
+    state.input = e.target.value;
+    localStorage.setItem('pr_input', state.input);
+    autoResize(els.input);
+    els.btn.disabled = state.loading || !state.input.trim();
+  });
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  els.input.addEventListener('keydown', (e) => {
+    if (isMobile) {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleProofread(); }
+    } else {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleProofread(); }
+    }
+  });
+  els.btn.addEventListener('click', handleProofread);
+
+  els.clearInput.addEventListener('click', () => {
+    uploadedFileName = null; uploadedFileType = null;
+    state.input = ''; state.output = '';
+    localStorage.removeItem('pr_input'); localStorage.removeItem('pr_output');
+    renderFileUploadArea();
+    updateUI();
+  });
+
+  els.copyInput.addEventListener('click', () => copyText(state.input, 'copy-input', 'svg-input'));
+
+  // Output inline editing
+  els.output.addEventListener('focus', () => { isOutputFocused = true; });
+  els.output.addEventListener('blur', () => {
+    isOutputFocused = false;
+    if (els.output.contentEditable === 'true') {
+      state.output = els.output.innerText.trim();
+      localStorage.setItem('pr_output', state.output);
+      renderOutputActions();
+    }
+  });
+  els.output.addEventListener('input', () => { state.output = els.output.innerText; });
+  els.output.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); }
+  });
+
+  // Chips
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('chip')) {
+      const type = e.target.getAttribute('data-type');
+      const val  = e.target.getAttribute('data-val');
+      if (type === 'lang')  { state.lang = val;              localStorage.setItem('pr_lang', val); }
+      if (type === 'level') { state.levelIdx = parseInt(val); localStorage.setItem('pr_level', val); }
+      if (type === 'tone')  { state.toneIdx = parseInt(val);  localStorage.setItem('pr_tone', val); }
+      if (type === 'ctx')   { state.contextVal = val;         localStorage.setItem('pr_ctx', val); }
+      updateUI();
+    }
+  });
+
+  // History
+  document.getElementById('history-clear-btn').addEventListener('click', () => {
+    localStorage.removeItem(HISTORY_KEY); renderHistory();
+  });
+  document.getElementById('history-list').addEventListener('click', (e) => {
+    // Copy button in history
+    const copyBtn = e.target.closest('.history-copy');
+    if (copyBtn) {
+      e.stopPropagation();
+      const idx   = parseInt(copyBtn.getAttribute('data-copy-idx'));
+      const entry = loadHistory()[idx];
+      if (entry && entry.output) {
+        navigator.clipboard.writeText(entry.output);
+        flashCopied(copyBtn);
+      }
+      return;
+    }
+    // Click on item → restore
+    const item = e.target.closest('.history-item');
+    if (!item) return;
+    const entry = loadHistory()[parseInt(item.getAttribute('data-idx'))];
+    if (!entry) return;
+    state.lang       = entry.lang;
+    state.toneIdx    = entry.toneIdx;
+    state.levelIdx   = entry.levelIdx;
+    state.contextVal = entry.contextVal || "";
+    state.input      = entry.input;
+    state.output     = entry.output;
+    ['lang','tone','level','input','output'].forEach(k => localStorage.setItem(`pr_${k}`, entry[k] || ''));
+    localStorage.setItem('pr_ctx', state.contextVal);
+    uploadedFileName = null; uploadedFileType = null;
+    renderFileUploadArea();
+    updateUI();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Init ──────────────────────────────────────────────────
+  renderFileUploadArea();
+  renderHistory();
+  updateUI();
+</script>
 </body>
 </html>
