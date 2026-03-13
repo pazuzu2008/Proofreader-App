@@ -30,20 +30,22 @@ export default async function handler(req, res) {
 
   // ── Persistent bottom keyboard ──────────────────────────────────────────────
   const MAIN_KEYBOARD = {
-    keyboard: [[{ text: '🌐 Language' }]],
+    keyboard: [[{ text: '🌐 Language IN/OUT' }]],
     resize_keyboard: true,
     is_persistent: true,
   };
 
+  // Escape user content before embedding in HTML messages
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function sendMsg(chatId, text, extra = {}) {
-    return tg('sendMessage', {
-      chat_id: chatId, text, parse_mode: 'HTML',
-      reply_markup: MAIN_KEYBOARD,
-      ...extra,
-    });
+    return tg('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: MAIN_KEYBOARD, ...extra });
   }
   function editMsg(chatId, msgId, text, extra = {}) {
     return tg('editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', ...extra });
+  }
+  // editResult: plain text for AI output — avoids HTML parse failures on < > & in user text
+  function editResult(chatId, msgId, text) {
+    return tg('editMessageText', { chat_id: chatId, message_id: msgId, text });
   }
   function editMarkup(chatId, msgId, reply_markup) {
     return tg('editMessageReplyMarkup', { chat_id: chatId, message_id: msgId, reply_markup });
@@ -242,7 +244,7 @@ export default async function handler(req, res) {
     }
 
     // "🌐 Language" button tap (same as /lang)
-    if (text === '🌐 Language' || text === '/lang' || text === '/language') {
+    if (text === '🌐 Language IN/OUT' || text === '/lang' || text === '/language') {
       await sendMsg(chatId, langSettingsText(chatId), { reply_markup: langKeyboard(chatId) });
       return res.status(200).json({ ok: true });
     }
@@ -274,14 +276,14 @@ export default async function handler(req, res) {
         const langNote = effIn !== effOut
           ? `\n<i>${flagIn} → ${flagOut}</i>`
           : `\n<i>${flagIn}</i>`;
-        await editMsg(chatId, statusId, `🎙 <i>${transcript}</i>${langNote}`);
+        await editMsg(chatId, statusId, `🎙 <i>${esc(transcript)}</i>${langNote}`);
 
         // Step 2: proofread/translate — new message
         const proofMsg = await sendMsg(chatId, '⏳ Proofreading…');
         const proofId  = proofMsg.result.message_id;
         try {
           const result = await proofread(transcript, effIn, effOut);
-          await editMsg(chatId, proofId, result);
+          await editResult(chatId, proofId, result);
         } catch (err) {
           await editMsg(chatId, proofId, `❌ Error: ${err.message}`);
         }
@@ -298,7 +300,7 @@ export default async function handler(req, res) {
     try {
       const { effIn, effOut } = resolveEffectiveLangs(text, settings);
       const result = await proofread(text, effIn, effOut);
-      await editMsg(chatId, waitMsg.result.message_id, result);
+      await editResult(chatId, waitMsg.result.message_id, result);
     } catch (err) {
       await editMsg(chatId, waitMsg.result.message_id, `❌ Error: ${err.message}`);
     }
