@@ -28,8 +28,19 @@ export default async function handler(req, res) {
     return r.json();
   }
 
+  // ── Persistent bottom keyboard ──────────────────────────────────────────────
+  const MAIN_KEYBOARD = {
+    keyboard: [[{ text: '🌐 Language' }]],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+
   function sendMsg(chatId, text, extra = {}) {
-    return tg('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', ...extra });
+    return tg('sendMessage', {
+      chat_id: chatId, text, parse_mode: 'HTML',
+      reply_markup: MAIN_KEYBOARD,
+      ...extra,
+    });
   }
   function editMsg(chatId, msgId, text, extra = {}) {
     return tg('editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', ...extra });
@@ -205,15 +216,31 @@ export default async function handler(req, res) {
 
     // Commands
     if (text === '/start') {
+      // Register bot command menu + set menu button (idempotent)
+      tg('setMyCommands', {
+        commands: [
+          { command: 'lang',  description: '🌐 Set input & output language' },
+          { command: 'start', description: '👋 Welcome & help' },
+          { command: 'help',  description: '📖 How to use' },
+        ]
+      }).catch(() => {});
+      tg('setChatMenuButton', {
+        chat_id: chatId,
+        menu_button: { type: 'commands' },
+      }).catch(() => {});
+
       await sendMsg(chatId,
         '✏️ <b>Proofreader Bot</b>\n\n' +
         'Send any text or voice message — I\'ll correct and polish it.\n\n' +
-        '🌐 Use /lang to set input and output language.\n\n' +
-        'Supports English, Russian, Ukrainian.'
+        '🌐 Tap <b>Language</b> button below (or /lang) to choose input &amp; output language.\n' +
+        'Example: input RU → output EN will take your Russian voice note and return polished English.\n\n' +
+        'Supports 🇬🇧 English · 🇷🇺 Russian · 🇺🇦 Ukrainian'
       );
       return res.status(200).json({ ok: true });
     }
-    if (text === '/lang' || text === '/language') {
+
+    // "🌐 Language" button tap (same as /lang)
+    if (text === '🌐 Language' || text === '/lang' || text === '/language') {
       await sendMsg(chatId, langSettingsText(chatId), { reply_markup: langKeyboard(chatId) });
       return res.status(200).json({ ok: true });
     }
