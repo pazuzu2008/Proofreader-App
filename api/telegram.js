@@ -83,8 +83,11 @@ export default async function handler(req, res) {
 
     // 3. Send to Groq Whisper
     const form = new FormData();
-    const ext  = filePath.split('.').pop() || 'ogg';
-    form.append('file', new Blob([audioBuffer], { type: `audio/${ext}` }), `voice.${ext}`);
+    // Telegram sends voice as .oga (OGG Opus) — Groq doesn't accept 'oga', remap to 'ogg'
+    const rawExt = (filePath.split('.').pop() || 'ogg').toLowerCase();
+    const ext    = rawExt === 'oga' ? 'ogg' : rawExt;
+    const mime   = ext === 'mp4' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : `audio/ogg`;
+    form.append('file', new Blob([audioBuffer], { type: mime }), `voice.${ext}`);
     form.append('model', 'whisper-large-v3');
 
     const whisperRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
