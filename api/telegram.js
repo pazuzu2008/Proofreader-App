@@ -105,11 +105,11 @@ async function tgCall(method, body) {
 }
 
 async function sendMessage(chat_id, text, extra = {}) {
-  return tgCall('sendMessage', { chat_id, text, parse_mode: 'Markdown', ...extra });
+  return tgCall('sendMessage', { chat_id, text, ...extra });
 }
 
 async function editMessage(chat_id, message_id, text, extra = {}) {
-  return tgCall('editMessageText', { chat_id, message_id, text, parse_mode: 'Markdown', ...extra });
+  return tgCall('editMessageText', { chat_id, message_id, text, ...extra });
 }
 
 async function answerCallback(callback_query_id, text = '') {
@@ -124,40 +124,6 @@ export default async function handler(req, res) {
   const update = req.body;
 
   try {
-    // ── Callback query (user clicked a language button) ──────
-    if (update.callback_query) {
-      const { id, data, message } = update.callback_query;
-      const [action, value]       = data.split(':');
-
-      if (action !== 'lang') { await answerCallback(id); return res.status(200).json({ ok: true }); }
-
-      const lang      = value;
-      const chat_id   = message.chat.id;
-      const msg_id    = message.message_id;
-      // Original text is in the message this bot replied to
-      const origText  = message.reply_to_message?.text;
-
-      if (!origText) {
-        await answerCallback(id, 'Cannot find original text');
-        return res.status(200).json({ ok: true });
-      }
-
-      await answerCallback(id, '⏳ Proofreading...');
-      await editMessage(chat_id, msg_id, '⏳ Proofreading...', {});
-
-      try {
-        const result = await proofread(origText, lang);
-        await editMessage(chat_id, msg_id, `✅ *Result (${lang.toUpperCase()}):*\n\n${result}`, {
-          reply_markup: langKeyboard(lang)
-        });
-      } catch (err) {
-        await editMessage(chat_id, msg_id, `❌ Error: ${err.message}`);
-      }
-
-      return res.status(200).json({ ok: true });
-    }
-
-    // ── Regular message ──────────────────────────────────────
     if (update.message) {
       const { chat, text, message_id } = update.message;
       if (!text) return res.status(200).json({ ok: true });
@@ -187,10 +153,13 @@ export default async function handler(req, res) {
 
       try {
         const result = await proofread(text, lang);
-        await editMessage(chat_id, waitMsg.result.message_id,
-          `✅ *Result (${lang.toUpperCase()}):*\n\n${result}`,
-          { reply_markup: langKeyboard(lang) }
-        );
+        await editMessage(chat_id, waitMsg.result.message_id, result, {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '📋 Copy', copy_text: { text: result } }
+            ]]
+          }
+        });
       } catch (err) {
         await editMessage(chat_id, waitMsg.result.message_id, `❌ Error: ${err.message}`);
       }
