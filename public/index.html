@@ -103,7 +103,11 @@
     .send-btn:disabled{opacity:0.25;cursor:not-allowed;}
     .send-btn:not(:disabled):hover{opacity:0.85;}
     .send-btn:not(:disabled):active{transform:scale(0.93);}
-    .input-hint{text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;}
+    .mic-btn{width:34px;height:34px;border-radius:9px;background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+    .mic-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--text-muted);}
+    .mic-btn.recording{background:#ef4444;border-color:#ef4444;color:#fff;animation:pulse 1s infinite;}
+    .mic-btn:disabled{opacity:0.3;cursor:not-allowed;}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4);}50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}}
   </style>
 </head>
 <body>
@@ -159,6 +163,12 @@
             <input type="file" accept=".docx,.pdf" id="file-input" style="display:none">
           </label>
         </div>
+        <button class="mic-btn" id="mic-btn" title="Voice input">
+          <svg id="mic-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
         <button class="send-btn" id="send-btn" disabled title="Send">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
@@ -418,8 +428,85 @@
     }
   });
 
-  // Init
-  renderUI();
+  // ── Voice input ───────────────────────────────────────────
+  const micBtn = document.getElementById('mic-btn');
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecording = false;
+
+  micBtn.addEventListener('click', async () => {
+    if (isRecording) {
+      // Stop recording
+      mediaRecorder.stop();
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Pick best supported format
+      const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4']
+        .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+      mediaRecorder.onstop = async () => {
+        isRecording = false;
+        stream.getTracks().forEach(t => t.stop());
+        micBtn.classList.remove('recording');
+        micBtn.disabled = true;
+        micBtn.title = 'Transcribing…';
+        document.getElementById('mic-icon').innerHTML = `
+          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 2"/>`;
+
+        try {
+          const ext = (mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm');
+          const blob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+          const formData = new FormData();
+          formData.append('file', blob, `audio.${ext}`);
+          formData.append('model', 'whisper-large-v3');
+          // Let Whisper auto-detect language (works great for EN/RU/UK)
+
+          const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Transcription failed');
+
+          if (data.text) {
+            const cur = els.input.value;
+            els.input.value = cur ? cur + ' ' + data.text : data.text;
+            autoResize(els.input);
+            els.sendBtn.disabled = false;
+            els.input.focus();
+          }
+        } catch (err) {
+          alert('Transcription error: ' + err.message);
+        } finally {
+          micBtn.disabled = false;
+          micBtn.title = 'Voice input';
+          document.getElementById('mic-icon').innerHTML = `
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`;
+        }
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      micBtn.classList.add('recording');
+      micBtn.title = 'Stop recording';
+      document.getElementById('mic-icon').innerHTML = `
+        <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>`;
+
+    } catch (err) {
+      if (err.name === 'NotAllowedError') alert('Microphone permission denied. Please allow mic access in your browser.');
+      else alert('Could not start recording: ' + err.message);
+    }
+  });
+
+  // ── Init ───────────────────────────────────────────────────  renderUI();
   renderChatHistory();
 </script>
 </body>
