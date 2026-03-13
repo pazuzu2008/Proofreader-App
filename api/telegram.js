@@ -1,10 +1,24 @@
-// api/telegram.js — Telegram bot with voice message support
+// api/telegram.js — Proofreader bot with IN/OUT language settings per user
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok: true });
 
   const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const GROQ_KEY       = process.env.GROQ_API_KEY;
+  const GEMINI_KEY     = process.env.GEMINI_API_KEY;
 
+  // ── Per-user settings (in-memory, persists while function is warm) ──────────
+  // { chatId: { inLang: 'auto'|'en'|'ru'|'uk', outLang: 'same'|'en'|'ru'|'uk' } }
+  if (!global._prUserSettings) global._prUserSettings = {};
+  const userSettings = global._prUserSettings;
+
+  function getSettings(chatId) {
+    return userSettings[chatId] || { inLang: 'auto', outLang: 'same' };
+  }
+  function saveSettings(chatId, patch) {
+    userSettings[chatId] = { ...getSettings(chatId), ...patch };
+  }
+
+  // ── Telegram API helpers ────────────────────────────────────────────────────
   async function tg(method, body) {
     const r = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/${method}`, {
       method: 'POST',
@@ -14,13 +28,33 @@ export default async function handler(req, res) {
     return r.json();
   }
 
-  async function sendMsg(chatId, text, replyToId) {
-    return tg('sendMessage', { chat_id: chatId, text, ...(replyToId ? { reply_to_message_id: replyToId } : {}) });
+  function sendMsg(chatId, text, extra = {}) {
+    return tg('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', ...extra });
+  }
+  function editMsg(chatId, msgId, text, extra = {}) {
+    return tg('editMessageText', { chat_id: chatId, message_id: msgId, text, parse_mode: 'HTML', ...extra });
+  }
+  function editMarkup(chatId, msgId, reply_markup) {
+    return tg('editMessageReplyMarkup', { chat_id: chatId, message_id: msgId, reply_markup });
+  }
+  function answerCallback(callbackQueryId, text = '') {
+    return tg('answerCallbackQuery', { callback_query_id: callbackQueryId, text });
   }
 
-  async function editMsg(chatId, msgId, text) {
-    return tg('editMessageText', { chat_id: chatId, message_id: msgId, text });
-  }
+  // ── Language helpers ────────────────────────────────────────────────────────
+  const LANG_NAME  = { en: 'English', ru: 'Russian', uk: 'Ukrainian' };
+  const IN_OPTS    = [
+    { v: 'auto', l: '✨ Auto' },
+    { v: 'en',   l: '🇬🇧 EN'  },
+    { v: 'ru',   l: '🇷🇺 RU'  },
+    { v: 'uk',   l: '🇺🇦 UK'  },
+  ];
+  const OUT_OPTS   = [
+    { v: 'same', l: '↩ Same' },
+    { v: 'en',   l: '🇬🇧 EN'  },
+    { v: 'ru',   l: '🇷🇺 RU'  },
+    { v: 'uk',   l: '🇺🇦 UK'  },
+  ];
 
   function detectLang(text) {
     const uk = (text.match(/[іїєґ]/gi) || []).length;
@@ -30,16 +64,48 @@ export default async function handler(req, res) {
     return 'en';
   }
 
-  function buildPrompt(text, lang) {
-    const LANG_NAME = { en: 'English', ru: 'Russian', uk: 'Ukrainian' };
-    const name = LANG_NAME[lang] || 'the source language';
-    return `You are a professional proofreader. Proofread and correct the ${name} text. Apply minimal structure only where it genuinely improves clarity. Return ONLY the corrected text in ${name}, no explanations.\n\nOriginal text:\n${text}`;
+  function resolveEffectiveLangs(inputText, settings) {
+    const effIn  = settings.inLang  === 'auto' ? detectLang(inputText) : settings.inLang;
+    const effOut = settings.outLang === 'same' ? effIn : settings.outLang;
+    return { effIn, effOut };
   }
 
-  async function proofread(text, lang) {
-    const prompt = buildPrompt(text, lang);
-    // Try Groq first for EN, Gemini first for RU/UK — same routing as before
-    const useGroqFirst = (lang === 'en');
+  function langSettingsText(chatId) {
+    const s = getSettings(chatId);
+    const inLabel  = IN_OPTS.find(o => o.v === s.inLang)?.l  || s.inLang;
+    const outLabel = OUT_OPTS.find(o => o.v === s.outLang)?.l || s.outLang;
+    return `🌐 <b>Language settings</b>\n\n<b>Input:</b>  ${inLabel}\n<b>Output:</b> ${outLabel}`;
+  }
+
+  function langKeyboard(chatId) {
+    const s = getSettings(chatId);
+    const inRow  = IN_OPTS.map(o  => ({ text: s.inLang  === o.v ? `✓ ${o.l}` : o.l,  callback_data: `in:${o.v}`  }));
+    const outRow = OUT_OPTS.map(o => ({ text: s.outLang === o.v ? `✓ ${o.l}` : o.l, callback_data: `out:${o.v}` }));
+    return {
+      inline_keyboard: [
+        [{ text: '── Input language ──────', callback_data: 'noop' }],
+        inRow,
+        [{ text: '── Output language ─────', callback_data: 'noop' }],
+        outRow,
+        [{ text: '✅ Done', callback_data: 'lang:done' }],
+      ],
+    };
+  }
+
+  // ── Proofreading / translation ──────────────────────────────────────────────
+  function buildPrompt(text, effIn, effOut) {
+    const translate = effIn !== effOut;
+    const outName   = LANG_NAME[effOut] || 'English';
+    const inName    = LANG_NAME[effIn]  || 'the source language';
+    const instr = translate
+      ? `You are a professional translator and editor. Translate the text from ${inName} to ${outName}, then proofread and polish it.`
+      : `You are a professional proofreader. Proofread and correct the ${outName} text.`;
+    return `${instr}\nApply minimal structure only where it genuinely improves clarity.\nReturn ONLY the final corrected text in ${outName}. No explanations, no labels.\n\nOriginal text:\n${text}`;
+  }
+
+  async function proofread(text, effIn, effOut) {
+    const prompt = buildPrompt(text, effIn, effOut);
+    const useGroqFirst = (effOut === 'en');
 
     async function tryGroq() {
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -51,9 +117,7 @@ export default async function handler(req, res) {
       if (!r.ok) throw new Error(d.error?.message || 'Groq error');
       return d.choices[0].message.content.trim();
     }
-
     async function tryGemini() {
-      const GEMINI_KEY = process.env.GEMINI_API_KEY;
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +127,6 @@ export default async function handler(req, res) {
       if (!r.ok) throw new Error(d.error?.message || 'Gemini error');
       return d.candidates[0].content.parts[0].text.trim();
     }
-
     if (useGroqFirst) {
       try { return await tryGroq(); } catch { return await tryGemini(); }
     } else {
@@ -71,80 +134,144 @@ export default async function handler(req, res) {
     }
   }
 
-  async function transcribeVoice(fileId) {
-    // 1. Get file path
+  // ── Voice transcription ─────────────────────────────────────────────────────
+  async function transcribeVoice(fileId, langHint) {
     const fileInfo = await (await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${fileId}`)).json();
     if (!fileInfo.ok) throw new Error('Could not get file info');
     const filePath = fileInfo.result.file_path;
-
-    // 2. Download audio
     const audioRes = await fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${filePath}`);
     const audioBuffer = await audioRes.arrayBuffer();
-
-    // 3. Send to Groq Whisper
     const form = new FormData();
-    // Telegram sends voice as .oga (OGG Opus) — Groq doesn't accept 'oga', remap to 'ogg'
     const rawExt = (filePath.split('.').pop() || 'ogg').toLowerCase();
     const ext    = rawExt === 'oga' ? 'ogg' : rawExt;
-    const mime   = ext === 'mp4' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : `audio/ogg`;
+    const mime   = ext === 'mp4' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : 'audio/ogg';
     form.append('file', new Blob([audioBuffer], { type: mime }), `voice.${ext}`);
     form.append('model', 'whisper-large-v3');
-
-    const whisperRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    if (langHint && langHint !== 'auto') form.append('language', langHint);
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${GROQ_KEY}` },
       body: form,
     });
-    const whisperData = await whisperRes.json();
-    if (!whisperRes.ok) throw new Error(whisperData.error?.message || 'Whisper error');
-    return whisperData.text;
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error?.message || 'Whisper error');
+    return d.text;
   }
 
+  // ── Main handler ────────────────────────────────────────────────────────────
   try {
     const update = req.body;
-    const message = update.message || update.edited_message;
-    if (!message) return res.status(200).json({ ok: true });
 
-    const chatId = message.chat.id;
-    const msgId  = message.message_id;
-    const text   = message.text || '';
+    // ── Callback query (inline keyboard) ────────────────────────────────────
+    if (update.callback_query) {
+      const cq     = update.callback_query;
+      const chatId = cq.message.chat.id;
+      const msgId  = cq.message.message_id;
+      const data   = cq.data;
 
-    // ── Commands ──
-    if (text === '/start' || text === '/help') {
-      await sendMsg(chatId, '✏️ Proofreader Bot\n\nSend any text or voice message — I\'ll correct and polish it.\n\nSupports English, Russian, Ukrainian.');
+      if (data === 'noop') {
+        await answerCallback(cq.id);
+        return res.status(200).json({ ok: true });
+      }
+      if (data === 'lang:done') {
+        await answerCallback(cq.id, '✅ Saved');
+        await editMarkup(chatId, msgId, { inline_keyboard: [] });
+        return res.status(200).json({ ok: true });
+      }
+      if (data.startsWith('in:')) {
+        saveSettings(chatId, { inLang: data.slice(3) });
+        await answerCallback(cq.id);
+        await editMsg(chatId, msgId, langSettingsText(chatId), { reply_markup: langKeyboard(chatId) });
+        return res.status(200).json({ ok: true });
+      }
+      if (data.startsWith('out:')) {
+        saveSettings(chatId, { outLang: data.slice(4) });
+        await answerCallback(cq.id);
+        await editMsg(chatId, msgId, langSettingsText(chatId), { reply_markup: langKeyboard(chatId) });
+        return res.status(200).json({ ok: true });
+      }
+      await answerCallback(cq.id);
       return res.status(200).json({ ok: true });
     }
 
-    // ── Voice message ──
+    // ── Regular message ──────────────────────────────────────────────────────
+    const message = update.message || update.edited_message;
+    if (!message) return res.status(200).json({ ok: true });
+
+    const chatId   = message.chat.id;
+    const msgId    = message.message_id;
+    const text     = message.text || '';
+    const settings = getSettings(chatId);
+
+    // Commands
+    if (text === '/start') {
+      await sendMsg(chatId,
+        '✏️ <b>Proofreader Bot</b>\n\n' +
+        'Send any text or voice message — I\'ll correct and polish it.\n\n' +
+        '🌐 Use /lang to set input and output language.\n\n' +
+        'Supports English, Russian, Ukrainian.'
+      );
+      return res.status(200).json({ ok: true });
+    }
+    if (text === '/lang' || text === '/language') {
+      await sendMsg(chatId, langSettingsText(chatId), { reply_markup: langKeyboard(chatId) });
+      return res.status(200).json({ ok: true });
+    }
+    if (text === '/help') {
+      await sendMsg(chatId,
+        '✏️ <b>Commands</b>\n\n' +
+        '/lang — set input & output language\n' +
+        '/start — welcome message\n\n' +
+        'Send text or voice — get it proofread/translated.'
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── Voice message ────────────────────────────────────────────────────────
     if (message.voice || message.audio) {
-      const fileId  = (message.voice || message.audio).file_id;
-      const waiting = await sendMsg(chatId, '🎙 Transcribing…', msgId);
+      const fileId   = (message.voice || message.audio).file_id;
+      const statusMsg = await sendMsg(chatId, '🎙 Transcribing…', { reply_to_message_id: msgId });
+      const statusId  = statusMsg.result.message_id;
       try {
-        const transcript = await transcribeVoice(fileId);
+        const transcript = await transcribeVoice(fileId, settings.inLang);
         if (!transcript?.trim()) {
-          await editMsg(chatId, waiting.result.message_id, '⚠️ Could not recognize speech. Try again.');
+          await editMsg(chatId, statusId, '⚠️ Could not recognize speech. Try again.');
           return res.status(200).json({ ok: true });
         }
-        await editMsg(chatId, waiting.result.message_id, '⏳ Proofreading…');
-        const lang   = detectLang(transcript);
-        const result = await proofread(transcript, lang);
-        await editMsg(chatId, waiting.result.message_id, result);
+        // Step 1: show transcript
+        const { effIn, effOut } = resolveEffectiveLangs(transcript, settings);
+        const flagIn  = effIn  === 'ru' ? '🇷🇺' : effIn  === 'uk' ? '🇺🇦' : '🇬🇧';
+        const flagOut = effOut === 'ru' ? '🇷🇺' : effOut === 'uk' ? '🇺🇦' : '🇬🇧';
+        const langNote = effIn !== effOut
+          ? `\n<i>${flagIn} → ${flagOut}</i>`
+          : `\n<i>${flagIn}</i>`;
+        await editMsg(chatId, statusId, `🎙 <i>${transcript}</i>${langNote}`);
+
+        // Step 2: proofread/translate — new message
+        const proofMsg = await sendMsg(chatId, '⏳ Proofreading…');
+        const proofId  = proofMsg.result.message_id;
+        try {
+          const result = await proofread(transcript, effIn, effOut);
+          await editMsg(chatId, proofId, result);
+        } catch (err) {
+          await editMsg(chatId, proofId, `❌ Error: ${err.message}`);
+        }
       } catch (err) {
-        await editMsg(chatId, waiting.result.message_id, `❌ Error: ${err.message}`);
+        await editMsg(chatId, statusId, `❌ Error: ${err.message}`);
       }
       return res.status(200).json({ ok: true });
     }
 
-    // ── Text message ──
+    // ── Text message ─────────────────────────────────────────────────────────
     if (!text || text.startsWith('/')) return res.status(200).json({ ok: true });
 
-    const waiting = await sendMsg(chatId, '⏳ Proofreading…', msgId);
+    const waitMsg = await sendMsg(chatId, '⏳ Proofreading…', { reply_to_message_id: msgId });
     try {
-      const lang   = detectLang(text);
-      const result = await proofread(text, lang);
-      await editMsg(chatId, waiting.result.message_id, result);
+      const { effIn, effOut } = resolveEffectiveLangs(text, settings);
+      const result = await proofread(text, effIn, effOut);
+      await editMsg(chatId, waitMsg.result.message_id, result);
     } catch (err) {
-      await editMsg(chatId, waiting.result.message_id, `❌ Error: ${err.message}`);
+      await editMsg(chatId, waitMsg.result.message_id, `❌ Error: ${err.message}`);
     }
 
     return res.status(200).json({ ok: true });
