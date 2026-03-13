@@ -138,21 +138,75 @@
     .download-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: var(--download-bg); border: 1px solid var(--download-border); border-radius: 8px; font-size: 12px; color: var(--download-text); cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .download-btn:hover { background: var(--download-hover); }
 
-    /* History */
+    /* History / Chat */
     .history-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
-    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .history-clear { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; font-family: inherit; padding: 0; transition: color 0.15s; }
     .history-clear:hover { color: var(--danger-hover); }
-    .history-list { display: flex; flex-direction: column; gap: 6px; }
-    .history-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
-    .history-item:hover { border-color: var(--chip-hover-border); background: var(--history-hover); }
-    .history-snippet { font-size: 13px; color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .history-lang { font-size: 13px; }
-    .history-time { font-size: 11px; color: var(--text-muted); }
-    .history-copy { background: none; border: none; cursor: pointer; padding: 3px; color: var(--icon-color); border-radius: 5px; display: flex; align-items: center; flex-shrink: 0; transition: color 0.15s; }
-    .history-copy:hover { color: var(--icon-hover); }
-    .history-copy.copied { color: #22c55e !important; }
+
+    .chat-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .chat-pair { display: flex; flex-direction: column; gap: 6px; }
+
+    .chat-bubble-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .chat-bubble-wrap.left  { align-items: flex-start; }
+    .chat-bubble-wrap.right { align-items: flex-end; }
+
+    .chat-label { font-size: 11px; color: var(--text-muted); padding: 0 4px; }
+
+    .chat-bubble {
+      max-width: 82%;
+      padding: 10px 13px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: break-word;
+      white-space: pre-wrap;
+      position: relative;
+    }
+    .chat-bubble.left {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text-secondary);
+    }
+    .chat-bubble.right {
+      background: var(--chip-active-bg);
+      color: var(--chip-active-text);
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .chat-bubble-footer.right { flex-direction: row-reverse; }
+
+    .chat-time { font-size: 11px; color: var(--text-muted); }
+    .chat-lang { font-size: 12px; }
+
+    .chat-copy {
+      background: none; border: none; cursor: pointer; padding: 2px;
+      color: var(--icon-color); border-radius: 4px; display: flex;
+      align-items: center; transition: color 0.15s; opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .chat-pair:hover .chat-copy { opacity: 1; }
+    .chat-copy:hover { color: var(--icon-hover); }
+    .chat-copy.copied { color: #22c55e !important; opacity: 1; }
+
+    .chat-restore {
+      background: none; border: none; cursor: pointer; padding: 2px;
+      color: var(--icon-color); border-radius: 4px; display: flex;
+      align-items: center; transition: color 0.15s, opacity 0.15s; opacity: 0;
+      font-size: 11px; font-family: inherit;
+    }
+    .chat-pair:hover .chat-restore { opacity: 1; }
+    .chat-restore:hover { color: var(--icon-hover); }
+
+    .chat-divider { text-align: center; font-size: 11px; color: var(--text-muted); margin: 4px 0; }
   </style>
 </head>
 <body>
@@ -217,13 +271,13 @@
   </div>
   <div class="output-box" id="output-text" contenteditable="false"></div>
 
-  <!-- History -->
+  <!-- History / Chat -->
   <div class="history-section" id="history-section" style="display:none">
     <div class="history-header">
-      <div class="section-label" style="margin:0" id="t-recent">RECENT</div>
-      <button class="history-clear" id="history-clear-btn">Clear history</button>
+      <div class="section-label" style="margin:0" id="t-recent">HISTORY</div>
+      <button class="history-clear" id="history-clear-btn">Clear</button>
     </div>
-    <div class="history-list" id="history-list"></div>
+    <div class="chat-list" id="history-list"></div>
   </div>
 </div>
 
@@ -249,7 +303,7 @@
   const TONE_EN   = ["Formal", "Neutral", "Casual", "Friendly"];
   const LEVEL_EN  = ["Simple", "Standard", "Advanced"];
   const LANG_FLAG = { en: "🇬🇧", ru: "🇷🇺", uk: "🇺🇦" };
-  const MAX_HISTORY = 20;
+  const MAX_HISTORY = 30;
   const HISTORY_KEY = 'pr_history';
 
   const CONTEXT_OPTIONS = {
@@ -338,25 +392,61 @@
     return `${Math.floor(h / 24)}d ago`;
   }
   function renderHistory() {
-    const h = loadHistory();
+    const h       = loadHistory();
     const section = document.getElementById('history-section');
     const list    = document.getElementById('history-list');
     if (!h.length) { section.style.display = 'none'; return; }
     section.style.display = 'block';
-    list.innerHTML = h.map((item, i) => `
-      <div class="history-item" data-idx="${i}">
-        <span class="history-snippet">${(item.input || '').slice(0, 60).replace(/</g,'&lt;')}${item.input && item.input.length > 60 ? '…' : ''}</span>
-        <div class="history-meta">
-          <span class="history-lang">${LANG_FLAG[item.lang] || ''}</span>
-          <span class="history-time">${timeAgo(item.ts)}</span>
-          <button class="history-copy" data-copy-idx="${i}" title="Copy result">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
+
+    // Group by date
+    function dateLabel(ts) {
+      const d    = new Date(ts);
+      const now  = new Date();
+      const diff = Math.floor((now - d) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Yesterday';
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    let lastDate = null;
+    list.innerHTML = h.slice().reverse().map((item, i) => {
+      const realIdx   = h.length - 1 - i; // index in original array (newest first)
+      const dLabel    = dateLabel(item.ts);
+      const divider   = dLabel !== lastDate
+        ? `<div class="chat-divider">${dLabel}</div>` : '';
+      lastDate = dLabel;
+
+      const inputSnip  = (item.input  || '').replace(/</g, '&lt;');
+      const outputSnip = (item.output || '').replace(/</g, '&lt;');
+      const t          = timeAgo(item.ts);
+
+      return `${divider}
+        <div class="chat-pair" data-idx="${realIdx}">
+          <!-- Original — left -->
+          <div class="chat-bubble-wrap left">
+            <span class="chat-label">Original</span>
+            <div class="chat-bubble left">${inputSnip}</div>
+            <div class="chat-bubble-footer left">
+              <span class="chat-time">${t}</span>
+              <span class="chat-lang">${LANG_FLAG[item.lang] || ''}</span>
+              <button class="chat-copy" data-copy-text="${encodeURIComponent(item.input || '')}" title="Copy original">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/></svg>
+              </button>
+            </div>
+          </div>
+          <!-- Result — right -->
+          <div class="chat-bubble-wrap right">
+            <span class="chat-label">Result</span>
+            <div class="chat-bubble right">${outputSnip}</div>
+            <div class="chat-bubble-footer right">
+              <button class="chat-restore" data-restore-idx="${realIdx}" title="Restore to editor">↑ Use</button>
+              <button class="chat-copy" data-copy-text="${encodeURIComponent(item.output || '')}" title="Copy result">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5h0a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5v0"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
   }
 
   // ── File upload (docx + pdf) ──────────────────────────────
@@ -631,35 +721,30 @@
     localStorage.removeItem(HISTORY_KEY); renderHistory();
   });
   document.getElementById('history-list').addEventListener('click', (e) => {
-    // Copy button in history
-    const copyBtn = e.target.closest('.history-copy');
+    // Copy button
+    const copyBtn = e.target.closest('.chat-copy');
     if (copyBtn) {
-      e.stopPropagation();
-      const idx   = parseInt(copyBtn.getAttribute('data-copy-idx'));
-      const entry = loadHistory()[idx];
-      if (entry && entry.output) {
-        navigator.clipboard.writeText(entry.output);
+      const text = decodeURIComponent(copyBtn.getAttribute('data-copy-text') || '');
+      if (text) {
+        navigator.clipboard.writeText(text);
         flashCopied(copyBtn);
       }
       return;
     }
-    // Click on item → restore
-    const item = e.target.closest('.history-item');
-    if (!item) return;
-    const entry = loadHistory()[parseInt(item.getAttribute('data-idx'))];
-    if (!entry) return;
-    state.lang       = entry.lang;
-    state.toneIdx    = entry.toneIdx;
-    state.levelIdx   = entry.levelIdx;
-    state.contextVal = entry.contextVal || "";
-    state.input      = entry.input;
-    state.output     = entry.output;
-    ['lang','tone','level','input','output'].forEach(k => localStorage.setItem(`pr_${k}`, entry[k] || ''));
-    localStorage.setItem('pr_ctx', state.contextVal);
-    uploadedFileName = null; uploadedFileType = null;
-    renderFileUploadArea();
-    updateUI();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Restore button
+    const restoreBtn = e.target.closest('.chat-restore');
+    if (restoreBtn) {
+      const entry = loadHistory()[parseInt(restoreBtn.getAttribute('data-restore-idx'))];
+      if (!entry) return;
+      state.lang = entry.lang; state.toneIdx = entry.toneIdx;
+      state.levelIdx = entry.levelIdx; state.contextVal = entry.contextVal || '';
+      state.input = entry.input; state.output = entry.output;
+      ['lang','tone','level','input','output'].forEach(k => localStorage.setItem(`pr_${k}`, entry[k] || ''));
+      localStorage.setItem('pr_ctx', state.contextVal);
+      uploadedFileName = null; uploadedFileType = null;
+      renderFileUploadArea(); updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   });
 
   // ── Init ──────────────────────────────────────────────────
