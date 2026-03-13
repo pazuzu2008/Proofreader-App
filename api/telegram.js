@@ -52,6 +52,7 @@ export default async function handler(req, res) {
     return tg('answerCallbackQuery', { callback_query_id: callbackQueryId, text });
   }
 
+
   // ── Language helpers ────────────────────────────────────────────────────────
   const LANG_NAME  = { en: 'English', ru: 'Russian', uk: 'Ukrainian' };
   const IN_OPTS    = [
@@ -180,7 +181,8 @@ export default async function handler(req, res) {
       const msgId  = cq.message.message_id;
       const data   = cq.data;
 
-      if (data === 'noop') {
+      if (data.startsWith('copy:')) {
+        // copy feature removed — just ack
         await answerCallback(cq.id);
         return res.status(200).json({ ok: true });
       }
