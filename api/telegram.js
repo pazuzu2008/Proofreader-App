@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     const inL  = { auto:'Auto', en:'EN', ru:'RU', uk:'UK' }[s.inLang]  || s.inLang;
     const outL = { same:'Same', en:'EN', ru:'RU', uk:'UK' }[s.outLang] || s.outLang;
     return {
-      keyboard: [[{ text: `🌐 ${inL} → ${outL}` }]],
+      keyboard: [[{ text: `🌐 Lang: ${inL} → ${outL}` }]],
       resize_keyboard: true,
       is_persistent: true,
     };
