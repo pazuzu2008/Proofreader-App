@@ -169,7 +169,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
     // Primary: Gemini 2.0 Flash
     async function tryGemini() {
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -191,7 +191,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'moonshotai/kimi-k2-instruct-0905',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user',   content: userPrompt   },

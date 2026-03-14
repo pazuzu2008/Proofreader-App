@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   async function fetchGemini() {
     if (!geminiKey) throw new Error('Gemini key missing');
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'moonshotai/kimi-k2-instruct-0905',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: userPrompt   },
