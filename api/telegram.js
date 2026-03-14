@@ -239,6 +239,47 @@ Output ONLY the corrected result — no tags, no explanations.`;
     return d.text;
   }
 
+  // ── Download photo as base64 ──────────────────────────────────────────────────
+  async function getPhotoBase64(photos) {
+    // Use largest photo size
+    const photo = photos[photos.length - 1];
+    const info  = await (await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${photo.file_id}`)).json();
+    if (!info.ok) throw new Error('Could not get photo info');
+    const buf = await (await fetch(`https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${info.result.file_path}`)).arrayBuffer();
+    return Buffer.from(buf).toString('base64');
+  }
+
+  // ── Proofread image via Gemini Vision ─────────────────────────────────────────
+  async function proofreadImage(base64, mime, settings) {
+    const LANG_NAME = { en: 'English', ru: 'Russian', uk: 'Ukrainian' };
+    const effOut = settings.outLang === 'same' ? '' : (LANG_NAME[settings.outLang] || '');
+    const langInstr = effOut
+      ? `Extract all text from the image, translate it to ${effOut} and proofread it.`
+      : `Extract all text from the image, then proofread and correct it.`;
+    const systemPrompt = `You are a text extraction and proofreading tool.
+${langInstr}
+Preserve the original structure. Output ONLY the final corrected text. No explanations.`;
+
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ parts: [
+            { inline_data: { mime_type: mime, data: base64 } },
+            { text: 'Extract and process the text from this image.' },
+          ]}],
+          generationConfig: { temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      }
+    );
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error?.message || 'Gemini Vision error');
+    return d.candidates[0].content.parts[0].text.trim();
+  }
+
   // ── Main ─────────────────────────────────────────────────────────────────────
   try {
     const update = req.body;
@@ -314,6 +355,22 @@ Output ONLY the corrected result — no tags, no explanations.`;
         await sendHtml(chatId, `🎙 <i>${esc(transcript)}</i>${arrow}`);
         // Send result as msg 2
         const result = await proofread(transcript, effIn, effOut);
+        await sendPlain(chatId, result);
+      } catch (err) {
+        if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);
+        else await sendHtml(chatId, `❌ ${esc(err.message)}`);
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    // Photo / screenshot
+    if (message.photo) {
+      const statusMsg = await sendHtml(chatId, '🖼 Reading image…', { reply_to_message_id: msgId });
+      const statusId  = statusMsg.result?.message_id;
+      try {
+        const base64 = await getPhotoBase64(message.photo);
+        const result = await proofreadImage(base64, 'image/jpeg', settings);
+        if (statusId) await deleteMsg(chatId, statusId);
         await sendPlain(chatId, result);
       } catch (err) {
         if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);

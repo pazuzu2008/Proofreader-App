@@ -536,6 +536,7 @@ let state = {
   loading: false,
 };
 let uploadedFileName=null, uploadedFileType=null, settingsOpen=false;
+let pastedImageBase64=null, pastedImageMime=null, pastedImageName=null;
 
 const els = {
   chatArea:       document.getElementById('chat-area'),
@@ -798,7 +799,7 @@ function appendLoading(){
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(Math.max(el.scrollHeight,72),200)+'px'; }
-els.input.addEventListener('input',()=>{ autoResize(els.input); els.sendBtn.disabled=state.loading||!els.input.value.trim(); });
+els.input.addEventListener('input',()=>{ autoResize(els.input); els.sendBtn.disabled=state.loading||(!els.input.value.trim()&&!pastedImageBase64); });
 els.input.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     if(isMobile){ if(e.ctrlKey||e.metaKey){ e.preventDefault(); handleProofread(); } }
@@ -808,29 +809,44 @@ els.input.addEventListener('keydown',e=>{
 els.sendBtn.addEventListener('click',handleProofread);
 
 async function handleProofread(){
-  const text=els.input.value.trim();
-  if(!text||state.loading) return;
+  const isImage = uploadedFileType === 'image' && pastedImageBase64;
+  const text = els.input.value.trim();
+  if((!text && !isImage) || state.loading) return;
   state.loading=true; els.sendBtn.disabled=true;
-  const inputText=text, fname=uploadedFileName;
-  const { systemPrompt, userPrompt, effIn, effOut } = buildPrompt(inputText,state.inputLang,state.outLang,state.formality,state.lengthIdx,state.customCtx);
-  const effLang = effOut; // route by output lang
+  const inputText = isImage ? '📷 Screenshot' : text;
+  const fname = uploadedFileName;
+  const imgB64  = pastedImageBase64, imgMime = pastedImageMime;
   els.input.value=''; autoResize(els.input);
-  uploadedFileName=null; uploadedFileType=null; renderFileBadge();
+  uploadedFileName=null; uploadedFileType=null;
+  pastedImageBase64=null; pastedImageMime=null; pastedImageName=null;
+  renderFileBadge();
   const loadEl=appendLoading();
   try{
-    const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemPrompt,userPrompt,lang:effLang})});
+    let body;
+    if(isImage){
+      // Image mode: Gemini Vision extracts text + proofreads in one shot
+      const effOut = state.outLang==='same' ? 'auto' : state.outLang;
+      body = { imageBase64: imgB64, imageMime: imgMime, outLang: effOut,
+               formality: state.formality, lengthIdx: state.lengthIdx,
+               customCtx: state.customCtx };
+    } else {
+      const { systemPrompt, userPrompt, effIn, effOut } = buildPrompt(text,state.inputLang,state.outLang,state.formality,state.lengthIdx,state.customCtx);
+      body = { systemPrompt, userPrompt, lang: effOut };
+    }
+    const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Server error');
     loadEl.remove();
     const ts=Date.now();
-    appendPair(inputText,data.result,ts,effIn,fname);
-    saveToHistory(inputText,data.result,effIn,fname);
+    const effIn2 = state.inputLang==='auto' ? detectLang(isImage?data.result:text) : state.inputLang;
+    appendPair(inputText,data.result,ts,effIn2,fname);
+    saveToHistory(inputText,data.result,effIn2,fname);
   }catch(err){
     loadEl.remove();
     const w=document.createElement('div'); w.className='msg-wrap bot';
     w.innerHTML=`<div class="msg-bubble bot" style="color:var(--danger)">${esc(err.message)}</div>`;
     els.chatArea.appendChild(w); scrollBot(true);
-  }finally{ state.loading=false; els.sendBtn.disabled=!els.input.value.trim(); }
+  }finally{ state.loading=false; els.sendBtn.disabled=!els.input.value.trim()&&!pastedImageBase64; }
 }
 
 // ── File upload ───────────────────────────────────────────────────────────────
@@ -850,11 +866,42 @@ els.fileInput.addEventListener('change',async e=>{
 function renderFileBadge(){
   if(uploadedFileName){
     els.fileBadgeWrap.style.display='block';
-    els.fileBadgeWrap.innerHTML=`<div class="file-badge"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>${uploadedFileName}<button class="file-badge-remove" id="remove-file">×</button></div>`;
-    document.getElementById('remove-file').addEventListener('click',()=>{ uploadedFileName=null; uploadedFileType=null; els.input.value=''; autoResize(els.input); els.sendBtn.disabled=true; els.fileBadgeWrap.style.display='none'; });
+    const icon = uploadedFileType==='image'
+      ? `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="2"/><circle cx="5.5" cy="5.5" r="1.5"/><polyline points="1,11 5,7 8,10 11,7 15,11"/></svg>`
+      : `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>`;
+    els.fileBadgeWrap.innerHTML=`<div class="file-badge">${icon}${uploadedFileName}<button class="file-badge-remove" id="remove-file">×</button></div>`;
+    document.getElementById('remove-file').addEventListener('click',()=>{
+      uploadedFileName=null; uploadedFileType=null;
+      pastedImageBase64=null; pastedImageMime=null; pastedImageName=null;
+      els.input.value=''; autoResize(els.input); els.sendBtn.disabled=true; els.fileBadgeWrap.style.display='none';
+    });
   }else{ els.fileBadgeWrap.style.display='none'; }
 }
 
+
+// ── Screenshot paste (Ctrl+V / Cmd+V) ────────────────────────────────────────
+document.addEventListener('paste', async e => {
+  const items = [...(e.clipboardData?.items || [])];
+  const imgItem = items.find(i => i.type.startsWith('image/'));
+  if (!imgItem) return;
+  e.preventDefault();
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    pastedImageBase64 = dataUrl.split(',')[1];
+    pastedImageMime   = file.type || 'image/png';
+    pastedImageName   = 'screenshot.png';
+    uploadedFileName  = pastedImageName;
+    uploadedFileType  = 'image';
+    els.input.value   = '';
+    autoResize(els.input);
+    els.sendBtn.disabled = false;
+    renderFileBadge();
+  };
+  reader.readAsDataURL(file);
+});
 // ── Copy / Download ───────────────────────────────────────────────────────────
 els.chatArea.addEventListener('click',async e=>{
   const copyBtn=e.target.closest('[data-copy]');
