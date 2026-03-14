@@ -89,6 +89,17 @@ export default async function handler(req, res) {
   function answerCb(id, text = '') {
     return tg('answerCallbackQuery', { callback_query_id: id, text });
   }
+  function friendlyError(msg) {
+    const m = String(msg).toLowerCase();
+    if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
+      if (m.includes('vision') || m.includes('extract') || m.includes('image')) {
+        return '📸 Screenshot quota exceeded — try again in a minute. Voice and text still work.';
+      }
+      return '⏳ Quota exceeded — please try again in a minute.';
+    }
+    return null;
+  }
+
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -213,7 +224,10 @@ Output ONLY the corrected result — no tags, no explanations.`;
 
     try { return await tryGemini(); } catch (e) {
       console.warn('Gemini failed, using Groq:', e.message);
-      return await tryGroq();
+      try { return await tryGroq(); } catch (e2) {
+        const friendly = friendlyError(e.message) || friendlyError(e2.message);
+        throw new Error(friendly || ('All services failed: ' + e2.message));
+      }
     }
   }
 
@@ -267,7 +281,10 @@ Output ONLY the corrected result — no tags, no explanations.`;
       }
     );
     const d = await r.json();
-    if (!r.ok || d.error) throw new Error(d.error?.message || 'Gemini Vision error');
+    if (!r.ok || d.error) {
+      const msg = d.error?.message || 'Gemini Vision error';
+      throw new Error(friendlyError(msg) || msg);
+    }
     return d.candidates[0].content.parts[0].text.trim();
   }
 

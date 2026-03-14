@@ -3,6 +3,17 @@ export default async function handler(req, res) {
 
   const { systemPrompt, userPrompt, lang, imageBase64, imageMime, outLang, formality, lengthIdx, customCtx, extractOnly } = req.body;
 
+  function friendlyError(msg) {
+    const m = msg.toLowerCase();
+    if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
+      if (m.includes('vision') || m.includes('extract') || m.includes('image')) {
+        return '📸 Screenshot quota exceeded — try again in a minute. Text proofreading still works.';
+      }
+      return '⏳ Quota exceeded — please try again in a minute.';
+    }
+    return null; // not a quota error
+  }
+
   const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey   = process.env.GROQ_API_KEY;
 
@@ -126,10 +137,16 @@ Output ONLY the final corrected text. No explanations, no labels.`;
       return res.status(200).json({ result });
     } catch (e) {
       console.warn('Gemini failed, falling back to Groq:', e.message);
-      const result = await fetchGroq();
-      return res.status(200).json({ result });
+      try {
+        const result = await fetchGroq();
+        return res.status(200).json({ result });
+      } catch (e2) {
+        const friendly = friendlyError(e.message) || friendlyError(e2.message);
+        throw new Error(friendly || ('All services failed: ' + e2.message));
+      }
     }
   } catch (err) {
-    return res.status(500).json({ error: 'Failed: ' + err.message });
+    const friendly = friendlyError(err.message);
+    return res.status(500).json({ error: friendly || ('Failed: ' + err.message) });
   }
 }
