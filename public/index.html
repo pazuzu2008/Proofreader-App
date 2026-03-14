@@ -41,13 +41,13 @@
 
     /* ── IN → OUT control ── */
     .io-control{display:flex;align-items:center;gap:6px;margin-right:6px;}
-    .io-group{display:flex;flex-direction:column;gap:0;}
-    .io-label{display:none;} /* hidden everywhere — arrow is sufficient */
+    .io-group{display:flex;flex-direction:column;gap:2px;}
+    .io-label{font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;line-height:1;text-align:center;}
     .io-pills{display:flex;gap:2px;background:var(--surface);border-radius:20px;padding:2px;}
     .io-pill{padding:3px 9px;border-radius:16px;font-size:11.5px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);font-family:inherit;transition:all .12s;white-space:nowrap;}
     .io-pill:hover{color:var(--text);}
     .io-pill.active{background:var(--active-bg);color:var(--active-text);}
-    .io-arrow{font-size:13px;color:var(--text-muted);line-height:1;flex-shrink:0;}
+    .io-arrow{font-size:13px;color:var(--text-muted);line-height:1;flex-shrink:0;margin-top:11px;}
 
     /* ── Icon buttons ── */
     .icon-btn{background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--text-muted);transition:color .15s,background .15s;position:relative;}
@@ -179,7 +179,8 @@
 
       /* IO pills */
       .io-control{gap:2px;margin-right:1px;}
-      .io-arrow{font-size:10px;margin:0 1px;}
+      .io-label{display:none;}
+      .io-arrow{font-size:10px;margin:0 1px;margin-top:0;}
       .io-pills{padding:1px 2px;gap:1px;}
       .io-pill{padding:2px 5px;font-size:10px;}
 
