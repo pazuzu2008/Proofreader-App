@@ -1,19 +1,48 @@
 // api/telegram.js — Proofreader bot with IN/OUT language settings per user
+export const config = { maxDuration: 60 }; // allow up to 60s for transcription + proofread
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(200).json({ ok: true });
+  if (req.method !== 'POST') { res.status(200).json({ ok: true }); return; }
 
   const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const GROQ_KEY       = process.env.GROQ_API_KEY;
   const GEMINI_KEY     = process.env.GEMINI_API_KEY;
 
-  // ── Per-user settings ────────────────────────────────────────────────────────
+  // ── Per-user settings (Vercel KV if configured, fallback to in-memory) ────────
   if (!global._prUserSettings) global._prUserSettings = {};
-  const userSettings = global._prUserSettings;
-  function getSettings(chatId) {
-    return userSettings[chatId] || { inLang: 'auto', outLang: 'same' };
+  const _mem = global._prUserSettings;
+  const KV_URL   = process.env.KV_REST_API_URL;
+  const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+
+  async function getSettings(chatId) {
+    if (_mem[chatId]) return _mem[chatId];
+    if (KV_URL && KV_TOKEN) {
+      try {
+        const r = await fetch(`${KV_URL}/get/pr_user_${chatId}`, {
+          headers: { Authorization: `Bearer ${KV_TOKEN}` }
+        });
+        const d = await r.json();
+        if (d.result) {
+          const s = JSON.parse(d.result);
+          _mem[chatId] = s;
+          return s;
+        }
+      } catch {}
+    }
+    return { inLang: 'auto', outLang: 'same' };
   }
-  function saveSettings(chatId, patch) {
-    userSettings[chatId] = { ...getSettings(chatId), ...patch };
+
+  async function saveSettings(chatId, patch) {
+    const current = await getSettings(chatId);
+    const updated = { ...current, ...patch };
+    _mem[chatId] = updated;
+    if (KV_URL && KV_TOKEN) {
+      fetch(`${KV_URL}/set/pr_user_${chatId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: JSON.stringify(updated) }),
+      }).catch(() => {});
+    }
   }
 
   // ── Telegram API ─────────────────────────────────────────────────────────────
@@ -79,14 +108,14 @@ export default async function handler(req, res) {
     const effOut = s.outLang === 'same' ? effIn : s.outLang;
     return { effIn, effOut };
   }
-  function langText(chatId) {
-    const s = getSettings(chatId);
+  async function langText(chatId) {
+    const s = await getSettings(chatId);
     const inL  = IN_OPTS.find(o => o.v === s.inLang)?.l  || s.inLang;
     const outL = OUT_OPTS.find(o => o.v === s.outLang)?.l || s.outLang;
     return `🌐 <b>Language settings</b>\n\n<b>Input:</b>  ${inL}\n<b>Output:</b> ${outL}`;
   }
-  function langKb(chatId) {
-    const s = getSettings(chatId);
+  async function langKb(chatId) {
+    const s = await getSettings(chatId);
     return {
       inline_keyboard: [
         [{ text: '── Input ───────────────', callback_data: 'noop' }],
@@ -164,6 +193,9 @@ export default async function handler(req, res) {
   }
 
   // ── Main ──────────────────────────────────────────────────────────────────────
+  // Respond to Telegram immediately — webhook must get 200 within 10s
+  res.status(200).json({ ok: true });
+
   try {
     const update = req.body;
 
@@ -173,21 +205,21 @@ export default async function handler(req, res) {
       const chatId = cq.message.chat.id;
       const msgId  = cq.message.message_id;
       const data   = cq.data;
-      if (data === 'noop')      { await answerCb(cq.id); return res.status(200).json({ ok: true }); }
-      if (data === 'lang:done') { await answerCb(cq.id, '✅ Saved'); await editMarkup(chatId, msgId, { inline_keyboard: [] }); return res.status(200).json({ ok: true }); }
-      if (data.startsWith('in:'))  { saveSettings(chatId, { inLang:  data.slice(3) }); await answerCb(cq.id); await editHtml(chatId, msgId, langText(chatId), { reply_markup: langKb(chatId) }); return res.status(200).json({ ok: true }); }
-      if (data.startsWith('out:')) { saveSettings(chatId, { outLang: data.slice(4) }); await answerCb(cq.id); await editHtml(chatId, msgId, langText(chatId), { reply_markup: langKb(chatId) }); return res.status(200).json({ ok: true }); }
+      if (data === 'noop')      { await answerCb(cq.id); return; }
+      if (data === 'lang:done') { await answerCb(cq.id, '✅ Saved'); await editMarkup(chatId, msgId, { inline_keyboard: [] }); return; }
+      if (data.startsWith('in:'))  { await saveSettings(chatId, { inLang:  data.slice(3) }); await answerCb(cq.id); await editHtml(chatId, msgId, await langText(chatId), { reply_markup: await langKb(chatId) }); return; }
+      if (data.startsWith('out:')) { await saveSettings(chatId, { outLang: data.slice(4) }); await answerCb(cq.id); await editHtml(chatId, msgId, await langText(chatId), { reply_markup: await langKb(chatId) }); return; }
       await answerCb(cq.id);
-      return res.status(200).json({ ok: true });
+      return;
     }
 
     const message = update.message || update.edited_message;
-    if (!message) return res.status(200).json({ ok: true });
+    if (!message) return;
 
     const chatId   = message.chat.id;
     const msgId    = message.message_id;
     const text     = message.text || '';
-    const settings = getSettings(chatId);
+    const settings = await getSettings(chatId);
 
     // /start
     if (text === '/start') {
@@ -203,19 +235,19 @@ export default async function handler(req, res) {
         'Example: RU → EN — send Russian voice, get polished English back.\n\n' +
         '🇬🇧 English · 🇷🇺 Russian · 🇺🇦 Ukrainian'
       );
-      return res.status(200).json({ ok: true });
+      return;
     }
 
     // Language button or /lang
     if (text === '🌐 Language IN/OUT' || text === '/lang' || text === '/language') {
-      await sendHtml(chatId, langText(chatId), { reply_markup: langKb(chatId) });
-      return res.status(200).json({ ok: true });
+      await sendHtml(chatId, await langText(chatId), { reply_markup: await langKb(chatId) });
+      return;
     }
 
     // /help
     if (text === '/help') {
       await sendHtml(chatId, '✏️ <b>Commands</b>\n\n/lang — input &amp; output language\n/start — welcome\n\nSend text or voice → get it proofread/translated.');
-      return res.status(200).json({ ok: true });
+      return;
     }
 
     // Voice message
@@ -227,7 +259,7 @@ export default async function handler(req, res) {
         const transcript = await transcribeVoice(fileId, settings.inLang);
         if (!transcript?.trim()) {
           if (statusId) await editHtml(chatId, statusId, '⚠️ Could not recognize speech. Try again.');
-          return res.status(200).json({ ok: true });
+          return;
         }
         const { effIn, effOut } = resolveLangs(transcript, settings);
         const flagIn  = effIn  === 'ru' ? '🇷🇺' : effIn  === 'uk' ? '🇺🇦' : '🇬🇧';
@@ -242,26 +274,23 @@ export default async function handler(req, res) {
       } catch (err) {
         if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);
       }
-      return res.status(200).json({ ok: true });
+      return;
     }
 
     // Text message
-    if (!text || text.startsWith('/')) return res.status(200).json({ ok: true });
+    if (!text || text.startsWith('/')) return;
 
-    const statusMsg = await sendHtml(chatId, '⏳ Proofreading…', { reply_to_message_id: msgId });
-    const statusId  = statusMsg.result?.message_id;
     try {
       const { effIn, effOut } = resolveLangs(text, settings);
       const result = await proofread(text, effIn, effOut);
-      if (statusId) await deleteMsg(chatId, statusId);
       await sendPlain(chatId, result);
     } catch (err) {
-      if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);
+      await sendHtml(chatId, `❌ ${esc(err.message)}`);
     }
 
-    return res.status(200).json({ ok: true });
+    return;
   } catch (err) {
     console.error('Telegram handler error:', err);
-    return res.status(200).json({ ok: true });
+    return;
   }
 }

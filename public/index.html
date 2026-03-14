@@ -164,6 +164,38 @@
     .mic-btn.recording .mic-lock-hint{opacity:1;}
     .mic-btn.locked .mic-lock-hint{opacity:0;}
     @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* ── Mobile responsive ── */
+    @media(max-width:600px){
+      .app{max-width:100%;}
+      .header{padding:0 10px;height:48px;}
+      .header-title{font-size:13px;}
+      /* Shrink IO pills on mobile */
+      .io-pill{padding:2px 6px;font-size:10.5px;}
+      .io-control{gap:4px;margin-right:4px;}
+      .h-divider{margin:0 3px;}
+      /* Hide label row (IN/OUT text) on small screens */
+      .io-label{display:none;}
+      .io-arrow{padding-top:0;}
+      /* Chat */
+      .chat-area{padding:14px 12px 10px;}
+      .msg-bubble{max-width:88%;font-size:14px;}
+      /* Input */
+      .input-area{
+        padding:8px 10px;
+        padding-bottom:max(10px, env(safe-area-inset-bottom));
+      }
+      textarea#input-text{min-height:44px;font-size:14px;}
+      .input-box{padding:8px 10px 8px 13px;border-radius:12px;}
+      /* Settings */
+      .settings-panel.open{padding:14px 14px;}
+      .settings-label{width:72px;font-size:10.5px;}
+    }
+    /* iPhone safe area — always apply for notch/home bar */
+    .input-area{padding-bottom:max(14px, env(safe-area-inset-bottom, 14px));}
+    @supports(padding-bottom: env(safe-area-inset-bottom)){
+      .input-area{padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+    }
   </style>
 </head>
 <body>
