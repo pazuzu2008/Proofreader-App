@@ -360,8 +360,18 @@ Output ONLY the corrected result — no tags, no explanations.`;
       const msgId  = cq.message.message_id;
       const data   = cq.data;
       if (data === 'noop')       { await answerCb(cq.id); return res.status(200).json({ ok: true }); }
-      if (data === 'lang:done')  { await answerCb(cq.id, '✅ Saved'); await editMarkup(chatId, msgId, { inline_keyboard: [] }); return res.status(200).json({ ok: true }); }
-      if (data === 'set:done')   { await answerCb(cq.id, '✅ Saved'); await editMarkup(chatId, msgId, { inline_keyboard: [] }); return res.status(200).json({ ok: true }); }
+      if (data === 'lang:done')  {
+        await answerCb(cq.id, '✅ Saved');
+        await editMarkup(chatId, msgId, { inline_keyboard: [] });
+        await sendHtml(chatId, '✓ Language saved');
+        return res.status(200).json({ ok: true });
+      }
+      if (data === 'set:done')   {
+        await answerCb(cq.id, '✅ Saved');
+        await editMarkup(chatId, msgId, { inline_keyboard: [] });
+        await sendHtml(chatId, '✓ Style saved');
+        return res.status(200).json({ ok: true });
+      }
       if (data.startsWith('fm:')) { await saveSettings(chatId, { formality: parseInt(data.slice(3)) }); await answerCb(cq.id); await editHtml(chatId, msgId, await settingsText(chatId), { reply_markup: await settingsKb(chatId) }); return res.status(200).json({ ok: true }); }
       if (data.startsWith('ln:')) { await saveSettings(chatId, { length:    parseInt(data.slice(3)) }); await answerCb(cq.id); await editHtml(chatId, msgId, await settingsText(chatId), { reply_markup: await settingsKb(chatId) }); return res.status(200).json({ ok: true }); }
       if (data.startsWith('in:'))  { await saveSettings(chatId, { inLang:  data.slice(3) }); await answerCb(cq.id); await editHtml(chatId, msgId, await langText(chatId), { reply_markup: await langKb(chatId) }); return res.status(200).json({ ok: true }); }
