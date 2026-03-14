@@ -396,7 +396,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
     }
 
     // Language button / /lang
-    if (text === '⚙️ Style' || text === '/settings' || text === '/style') {
+    if (text.startsWith('⚙️') || text === '/settings' || text === '/style') {
       await sendHtml(chatId, await settingsText(chatId), { reply_markup: await settingsKb(chatId) });
       return res.status(200).json({ ok: true });
     }
