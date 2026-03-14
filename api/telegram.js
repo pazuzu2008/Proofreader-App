@@ -89,13 +89,14 @@ export default async function handler(req, res) {
   function answerCb(id, text = '') {
     return tg('answerCallbackQuery', { callback_query_id: id, text });
   }
-  function friendlyError(msg) {
+  function friendlyError(msg, isImage = false) {
     const m = String(msg).toLowerCase();
     if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-      if (m.includes('vision') || m.includes('extract') || m.includes('image')) {
-        return '📸 Screenshot quota exceeded — try again in a minute. Voice and text still work.';
-      }
-      return '⏳ Quota exceeded — please try again in a minute.';
+      const retryMatch = String(msg).match(/retry[^\d]*([\d.]+)/i);
+      const rt = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
+      const when = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
+      if (isImage) return `📸 Screenshot quota exceeded — try again ${when}. Voice and text still work.`;
+      return `⏳ Quota exceeded — please try again ${when}.`;
     }
     return null;
   }
@@ -286,7 +287,10 @@ Output ONLY the corrected result — no tags, no explanations.`;
       // Always use screenshot-specific message for image quota errors
       const m = msg.toLowerCase();
       if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-        throw new Error('📸 Screenshot quota exceeded — try again in a minute. Voice and text still work.');
+        const retryMatch = msg.match(/retry[^\d]*([\d.]+)/i);
+        const rt = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
+        const when = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
+        throw new Error(`📸 Screenshot quota exceeded — try again ${when}. Voice and text still work.`);
       }
       throw new Error(msg);
     }

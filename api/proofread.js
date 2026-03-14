@@ -3,15 +3,19 @@ export default async function handler(req, res) {
 
   const { systemPrompt, userPrompt, lang, imageBase64, imageMime, outLang, formality, lengthIdx, customCtx, extractOnly } = req.body;
 
-  function friendlyError(msg) {
+  function friendlyError(msg, isImage = false) {
     const m = msg.toLowerCase();
     if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-      if (m.includes('vision') || m.includes('extract') || m.includes('image')) {
-        return '📸 Screenshot quota exceeded — try again in a minute. Text proofreading still works.';
-      }
-      return '⏳ Quota exceeded — please try again in a minute.';
+      // Extract retry time from Gemini error, e.g. "retry in 16.322707105s"
+      const retryMatch = msg.match(/retry[^\d]*(\d+(?:\.\d+)?)/i);
+      const retryTime = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
+      const when = retryTime
+        ? (retryTime < 60 ? `in ${retryTime}s` : `in ${Math.ceil(retryTime/60)} min`)
+        : 'in a minute';
+      if (isImage) return `📸 Screenshot quota exceeded — try again ${when}. Text proofreading still works.`;
+      return `⏳ Quota exceeded — please try again ${when}.`;
     }
-    return null; // not a quota error
+    return null;
   }
 
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -44,7 +48,10 @@ export default async function handler(req, res) {
       const msg = d.error?.message || 'Gemini extract error';
       const m = msg.toLowerCase();
       if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-        throw new Error('📸 Screenshot quota exceeded — try again in a minute. Text proofreading still works.');
+        const retryMatch2 = msg.match(/retry[^\d]*([\d.]+)/i);
+      const rt = retryMatch2 ? Math.ceil(parseFloat(retryMatch2[1])) : null;
+      const wh = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
+      throw new Error(`📸 Screenshot quota exceeded — try again ${wh}. Text proofreading still works.`);
       }
       throw new Error(msg);
     }
