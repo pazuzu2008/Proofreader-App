@@ -59,17 +59,22 @@ export default async function handler(req, res) {
     return r.json();
   }
 
-  const MAIN_KB = {
-    keyboard: [[{ text: '🌐 Language IN/OUT' }]],
-    resize_keyboard: true,
-    is_persistent: true,
-  };
+  function mainKb(chatId) {
+    const s = global._prCache?.[chatId] || { inLang: 'auto', outLang: 'same' };
+    const inL  = { auto:'Auto', en:'EN', ru:'RU', uk:'UK' }[s.inLang]  || s.inLang;
+    const outL = { same:'Same', en:'EN', ru:'RU', uk:'UK' }[s.outLang] || s.outLang;
+    return {
+      keyboard: [[{ text: `🌐 ${inL} → ${outL}` }]],
+      resize_keyboard: true,
+      is_persistent: true,
+    };
+  }
 
   function sendHtml(chatId, html, extra = {}) {
-    return tg('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', reply_markup: MAIN_KB, ...extra });
+    return tg('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', reply_markup: mainKb(chatId), ...extra });
   }
   function sendPlain(chatId, text) {
-    return tg('sendMessage', { chat_id: chatId, text, reply_markup: MAIN_KB });
+    return tg('sendMessage', { chat_id: chatId, text, reply_markup: mainKb(chatId) });
   }
   function editHtml(chatId, msgId, html, extra = {}) {
     return tg('editMessageText', { chat_id: chatId, message_id: msgId, text: html, parse_mode: 'HTML', ...extra });
@@ -269,7 +274,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
       await sendHtml(chatId,
         '✏️ <b>Proofreader Bot</b>\n\n' +
         'Send any text or voice message — I\'ll correct and polish it.\n\n' +
-        '🌐 Tap <b>Language IN/OUT</b> below to set input &amp; output language.\n' +
+        '🌐 Tap the <b>Language</b> button below to set input &amp; output language.\n' +
         'Example: RU → EN — send Russian voice, get polished English.\n\n' +
         '🇬🇧 English · 🇷🇺 Russian · 🇺🇦 Ukrainian'
       );
@@ -277,7 +282,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
     }
 
     // Language button / /lang
-    if (text === '🌐 Language IN/OUT' || text === '/lang' || text === '/language') {
+    if (text.startsWith('🌐') || text === '/lang' || text === '/language') {
       await sendHtml(chatId, await langText(chatId), { reply_markup: await langKb(chatId) });
       return res.status(200).json({ ok: true });
     }
