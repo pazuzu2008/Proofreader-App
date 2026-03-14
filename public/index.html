@@ -167,12 +167,11 @@
 
     /* ── Mobile responsive ── */
     @media(max-width:600px){
-      .app{max-width:100%;overflow:hidden;}
+      .app{max-width:100%;}
 
-      /* Header */
+      /* Header — spacer stays flex:1 so right icons stay right */
       .header{padding:0 6px;height:44px;}
       .header-title{display:none;}
-      .header-spacer{flex:0 0 2px;}
       .header-right{gap:0;flex-shrink:0;}
       .h-divider{margin:0 1px;}
       .icon-btn{padding:4px;}
@@ -184,10 +183,10 @@
       .io-pills{padding:1px 2px;gap:1px;}
       .io-pill{padding:2px 5px;font-size:10px;}
 
-      /* Chat area — leave room for fixed input */
-      .chat-area{padding:12px 10px 8px;padding-bottom:90px !important;}
+      /* Chat area — leave room for fixed input (~70px) */
+      .chat-area{padding:12px 10px 80px;}
 
-      /* Input area: fixed at bottom, moves up with keyboard */
+      /* Input area: fixed at bottom */
       .input-area{
         position:fixed;
         bottom:0; left:0; right:0;
@@ -196,18 +195,21 @@
         background:var(--bg);
         border-top:1px solid var(--border);
         z-index:50;
+        box-sizing:border-box;
       }
-      .input-box{padding:7px 10px 7px 12px;border-radius:12px;}
-      textarea#input-text{min-height:32px;max-height:100px;font-size:14px;}
+      /* Input box: don't let textarea push buttons off screen */
+      .input-box{padding:6px 8px 6px 12px;border-radius:12px;width:100%;box-sizing:border-box;}
+      .input-left{min-width:0;flex:1;}
+      textarea#input-text{min-height:28px;max-height:96px;font-size:14px;width:100%;}
+      .input-tools{flex-shrink:0;}
       .input-hint{display:none;}
 
-      /* Settings panel — also fixed context */
-      .settings-panel{position:relative;z-index:40;}
+      /* Settings */
       .settings-panel.open{padding:12px;}
       .settings-label{width:66px;font-size:10px;}
     }
 
-    /* iOS keyboard: adjust fixed input position via JS (see visualViewport listener) */
+    /* iOS keyboard: adjust fixed input position via JS */
     @supports(height: 100dvh){ .app{height:100dvh;} }
   </style>
 </head>
