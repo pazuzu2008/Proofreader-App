@@ -249,29 +249,20 @@ Output ONLY the corrected result — no tags, no explanations.`;
     return Buffer.from(buf).toString('base64');
   }
 
-  // ── Proofread image via Gemini Vision ─────────────────────────────────────────
-  async function proofreadImage(base64, mime, settings) {
-    const LANG_NAME = { en: 'English', ru: 'Russian', uk: 'Ukrainian' };
-    const effOut = settings.outLang === 'same' ? '' : (LANG_NAME[settings.outLang] || '');
-    const langInstr = effOut
-      ? `Extract all text from the image, translate it to ${effOut} and proofread it.`
-      : `Extract all text from the image, then proofread and correct it.`;
-    const systemPrompt = `You are a text extraction and proofreading tool.
-${langInstr}
-Preserve the original structure. Output ONLY the final corrected text. No explanations.`;
-
+  // ── Extract text from image via Gemini Vision ─────────────────────────────────
+  async function extractImageText(base64, mime) {
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
+          system_instruction: { parts: [{ text: 'You are a text extraction tool. Extract ALL text from the image exactly as written, preserving line breaks and structure. Output ONLY the extracted text, nothing else.' }] },
           contents: [{ parts: [
             { inline_data: { mime_type: mime, data: base64 } },
-            { text: 'Extract and process the text from this image.' },
+            { text: 'Extract all text from this image.' },
           ]}],
-          generationConfig: { temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } },
+          generationConfig: { temperature: 0.1, thinkingConfig: { thinkingBudget: 0 } },
         }),
       }
     );
@@ -369,8 +360,21 @@ Preserve the original structure. Output ONLY the final corrected text. No explan
       const statusId  = statusMsg.result?.message_id;
       try {
         const base64 = await getPhotoBase64(message.photo);
-        const result = await proofreadImage(base64, 'image/jpeg', settings);
+        // Step 1: extract raw text from image
+        const extracted = await extractImageText(base64, 'image/jpeg');
+        if (!extracted?.trim()) {
+          if (statusId) await editHtml(chatId, statusId, '⚠️ No text found in image.');
+          return res.status(200).json({ ok: true });
+        }
+        // Show extracted text as msg 1
         if (statusId) await deleteMsg(chatId, statusId);
+        const { effIn, effOut } = resolveLangs(extracted, { inLang: 'auto', outLang: settings.outLang });
+        const flagIn  = effIn  === 'ru' ? '🇷🇺' : effIn  === 'uk' ? '🇺🇦' : '🇬🇧';
+        const flagOut = effOut === 'ru' ? '🇷🇺' : effOut === 'uk' ? '🇺🇦' : '🇬🇧';
+        const arrow   = effIn !== effOut ? ` ${flagIn} → ${flagOut}` : ` ${flagIn}`;
+        await sendHtml(chatId, `🖼 <i>${esc(extracted)}</i>${arrow}`);
+        // Step 2: proofread/translate extracted text
+        const result = await proofread(extracted, effIn, effOut);
         await sendPlain(chatId, result);
       } catch (err) {
         if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);
