@@ -421,21 +421,45 @@ function detectLang(text){
 }
 
 function buildPrompt(inputText, inputLang, outputLang, formality, lengthIdx, customCtx){
-  const fStr = FORMALITY_KEYS[formality];
-  const lStr = LENGTH_KEYS[lengthIdx];
-  const ctx  = customCtx ? `\nAdditional context: ${customCtx}` : '';
   const effIn  = inputLang  === 'auto' ? detectLang(inputText) : inputLang;
   const effOut = outputLang === 'same' ? effIn : outputLang;
   const translate = effIn !== effOut;
-  const LNAME = {en:'English',ru:'Russian',uk:'Ukrainian'};
-  const outName = LNAME[effOut]||'English';
-  const instr = translate
-    ? `You are a professional translator and editor. Translate the text from ${LNAME[effIn]||'the source language'} to ${outName}, then proofread and polish it.`
-    : `You are a professional proofreader. Proofread and correct the ${outName} text.`;
-  return `${instr}
-Tone/formality: ${fStr}. Length: ${lStr}.${ctx}
-Apply minimal structure only where it genuinely improves clarity — paragraph breaks, bullets, or lists only when the content clearly calls for it.
-Return ONLY the final corrected text in ${outName}. No explanations, no labels.\n\nOriginal text:\n${inputText}`;
+  const LNAME = { en:'English', ru:'Russian', uk:'Ukrainian' };
+  const outName = LNAME[effOut] || 'English';
+  const inName  = LNAME[effIn]  || 'the source language';
+
+  const FORMALITY_MAP = [
+    'Formal — professional, polished, no contractions or slang.',
+    'Neutral — clear and natural, neither stiff nor casual.',
+    'Casual — friendly and conversational, contractions welcome.',
+  ];
+  const LENGTH_MAP = [
+    'Concise — trim redundancy, keep it tight.',
+    'Balanced — preserve original length and structure.',
+    'Detailed — expand where useful, add clarity.',
+  ];
+
+  const ctxLine = customCtx ? `\nContext about the author or use case: ${customCtx}` : '';
+
+  const systemPrompt = translate
+    ? `You are an expert translator and editor with native-level fluency in ${inName} and ${outName}.
+Your job: translate the text from ${inName} to ${outName}, then polish it as a native speaker would.
+Rules:
+- Preserve the author's voice and intent — do not rewrite beyond what's needed
+- Tone: ${FORMALITY_MAP[formality] || FORMALITY_MAP[1]}
+- Length: ${LENGTH_MAP[lengthIdx] || LENGTH_MAP[1]}
+- Use minimal structure (bullets/headers only when content clearly requires it)
+- Do NOT add explanations, labels, or any text outside the result${ctxLine}`
+    : `You are an expert proofreader and editor with native-level fluency in ${outName}.
+Your job: correct grammar, spelling, punctuation, word choice, and flow — then polish the text.
+Rules:
+- Preserve the author's voice and intent — do not rewrite beyond what's needed
+- Tone: ${FORMALITY_MAP[formality] || FORMALITY_MAP[1]}
+- Length: ${LENGTH_MAP[lengthIdx] || LENGTH_MAP[1]}
+- Use minimal structure (bullets/headers only when content clearly requires it)
+- Do NOT add explanations, labels, or any text outside the result${ctxLine}`;
+
+  return { systemPrompt, userPrompt: inputText, effIn, effOut };
 }
 
 // ── Theme ────────────────────────────────────────────────────────────────────
@@ -742,19 +766,19 @@ async function handleProofread(){
   if(!text||state.loading) return;
   state.loading=true; els.sendBtn.disabled=true;
   const inputText=text, fname=uploadedFileName;
-  const effLang=state.inputLang==='auto'?detectLang(inputText):state.inputLang;
-  const prompt=buildPrompt(inputText,state.inputLang,state.outLang,state.formality,state.lengthIdx,state.customCtx);
+  const { systemPrompt, userPrompt, effIn, effOut } = buildPrompt(inputText,state.inputLang,state.outLang,state.formality,state.lengthIdx,state.customCtx);
+  const effLang = effOut; // route by output lang
   els.input.value=''; autoResize(els.input);
   uploadedFileName=null; uploadedFileType=null; renderFileBadge();
   const loadEl=appendLoading();
   try{
-    const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,lang:effLang})});
+    const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemPrompt,userPrompt,lang:effLang})});
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Server error');
     loadEl.remove();
     const ts=Date.now();
-    appendPair(inputText,data.result,ts,effLang,fname);
-    saveToHistory(inputText,data.result,effLang,fname);
+    appendPair(inputText,data.result,ts,effIn,fname);
+    saveToHistory(inputText,data.result,effIn,fname);
   }catch(err){
     loadEl.remove();
     const w=document.createElement('div'); w.className='msg-wrap bot';

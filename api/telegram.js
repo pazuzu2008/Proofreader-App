@@ -132,39 +132,61 @@ export default async function handler(req, res) {
   function buildPrompt(text, effIn, effOut) {
     const outName = LANG_NAME[effOut] || 'English';
     const inName  = LANG_NAME[effIn]  || 'the source language';
-    const instr   = effIn !== effOut
-      ? `You are a professional translator and editor. Translate from ${inName} to ${outName}, then proofread and polish.`
-      : `You are a professional proofreader. Proofread and correct the ${outName} text.`;
-    return `${instr}\nReturn ONLY the final corrected text in ${outName}. No explanations.\n\nText:\n${text}`;
+    const systemPrompt = effIn !== effOut
+      ? `You are an expert translator and editor with native-level fluency in ${inName} and ${outName}.
+Translate the text from ${inName} to ${outName}, then polish it as a native speaker would.
+Preserve the author's voice and intent. Do NOT add explanations or labels — return only the result.`
+      : `You are an expert proofreader and editor with native-level fluency in ${outName}.
+Correct grammar, spelling, punctuation, word choice, and flow. Preserve the author's voice.
+Do NOT add explanations or labels — return only the corrected text.`;
+    return { systemPrompt, userPrompt: text };
   }
 
   async function proofread(text, effIn, effOut) {
-    const prompt = buildPrompt(text, effIn, effOut);
-    const useGroqFirst = effOut === 'en';
+    const { systemPrompt, userPrompt } = buildPrompt(text, effIn, effOut);
+
+    // Primary: Gemini 2.0 Flash
+    async function tryGemini() {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ parts: [{ text: userPrompt }] }],
+            generationConfig: { temperature: 0.3 },
+          }),
+        }
+      );
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error?.message || 'Gemini error');
+      return d.candidates[0].content.parts[0].text.trim();
+    }
+
+    // Fallback: Groq Llama 3.3 70B
     async function tryGroq() {
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], max_tokens: 4096 }),
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt   },
+          ],
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error?.message || 'Groq error');
       return d.choices[0].message.content.trim();
     }
-    async function tryGemini() {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error?.message || 'Gemini error');
-      return d.candidates[0].content.parts[0].text.trim();
-    }
-    if (useGroqFirst) {
-      try { return await tryGroq(); } catch { return await tryGemini(); }
-    } else {
-      try { return await tryGemini(); } catch { return await tryGroq(); }
+
+    try { return await tryGemini(); } catch (e) {
+      console.warn('Gemini failed, using Groq:', e.message);
+      return await tryGroq();
     }
   }
 
