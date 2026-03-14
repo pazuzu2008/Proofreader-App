@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Proofreader</title>
   <link rel="icon" href="/favicon.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -186,39 +186,42 @@
       /* Chat area — leave room for fixed input (~70px) */
       .chat-area{padding:12px 10px 80px;}
 
-      /* Input area: fixed at bottom */
+      /* Input area: stay in normal flow, keyboard pushes it up */
       .input-area{
-        position:fixed;
-        bottom:0; left:0;
-        width:100vw;
-        max-width:100vw;
+        position:relative;
+        flex-shrink:0;
         padding:8px 10px;
         padding-bottom:max(8px, env(safe-area-inset-bottom));
         background:var(--bg);
         border-top:1px solid var(--border);
         z-index:50;
+        width:100%;
         box-sizing:border-box;
-        overflow:hidden;
       }
-      /* Input box: row must never exceed screen width */
+      /* Input box */
       .input-box{
         padding:6px 8px 6px 12px;
         border-radius:12px;
         width:100%;
         box-sizing:border-box;
-        overflow:hidden;
+        display:flex;
+        align-items:flex-end;
       }
-      .input-left{min-width:0;flex:1;overflow:hidden;}
-      textarea#input-text{min-height:28px;max-height:96px;font-size:14px;width:100%;box-sizing:border-box;}
-      .input-tools{flex-shrink:0;display:flex;align-items:flex-end;gap:4px;}
+      .input-left{min-width:0;flex:1;}
+      textarea#input-text{min-height:28px;max-height:80px;font-size:14px;width:100%;box-sizing:border-box;}
+      .input-tools{flex-shrink:0;display:flex;align-items:flex-end;gap:3px;}
+      .tool-btn{padding:4px;}
+      .send-btn{width:30px;height:30px;}
       .input-hint{display:none;}
+      /* Chat: no bottom padding needed since input is in flow */
+      .chat-area{padding:12px 10px 8px;}
 
       /* Settings */
       .settings-panel.open{padding:12px;}
       .settings-label{width:66px;font-size:10px;}
     }
 
-    /* iOS keyboard: adjust fixed input position via JS */
+    /* iOS keyboard: use interactive-widget so keyboard shrinks the viewport */
     @supports(height: 100dvh){ .app{height:100dvh;} }
   </style>
 </head>
@@ -979,16 +982,11 @@ micBtn.addEventListener('pointercancel',()=>{ if(isRecording&&!isLocked) stopRec
 micBtn.addEventListener('click',()=>{ if(isLocked) stopRecording(); });
 
 // ── iOS keyboard viewport fix ─────────────────────────────────────────────────
-if(window.visualViewport && /iPhone|iPad|iPod/.test(navigator.userAgent)){
-  const inputArea = document.querySelector('.input-area');
-  function onVPResize(){
-    if(window.innerWidth > 600){ inputArea.style.bottom=''; return; }
-    // Distance from bottom of visualViewport to bottom of layout viewport
-    const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-    inputArea.style.bottom = Math.max(0, offset) + 'px';
-  }
-  window.visualViewport.addEventListener('resize',  onVPResize);
-  window.visualViewport.addEventListener('scroll',  onVPResize);
+// Scroll chat to bottom when keyboard opens so last message stays visible
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{
+    if(window.innerWidth <= 600) scrollBot(false);
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
