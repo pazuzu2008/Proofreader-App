@@ -18,7 +18,10 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: { temperature: 0.3 },
+          generationConfig: {
+            temperature: 0.3,
+            thinkingConfig: { thinkingBudget: 0 }, // disable thinking — not needed for proofreading, adds latency
+          },
         }),
       }
     );

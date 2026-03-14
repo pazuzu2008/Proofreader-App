@@ -13,6 +13,7 @@ export default async function handler(req, res) {
   // ── Settings: Upstash KV with in-memory cache ────────────────────────────────
   if (!global._prCache) global._prCache = {};
 
+
   async function kvGet(key) {
     try {
       const r = await fetch(`${KV_URL}/get/${key}`, {
@@ -181,7 +182,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
           body: JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents: [{ parts: [{ text: userPrompt }] }],
-            generationConfig: { temperature: 0.3 },
+            generationConfig: { temperature: 0.3, thinkingConfig: { thinkingBudget: 0 } },
           }),
         }
       );
