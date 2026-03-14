@@ -6,14 +6,8 @@ export default async function handler(req, res) {
   function friendlyError(msg, isImage = false) {
     const m = msg.toLowerCase();
     if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-      // Extract retry time from Gemini error, e.g. "retry in 16.322707105s"
-      const retryMatch = msg.match(/retry[^\d]*(\d+(?:\.\d+)?)/i);
-      const retryTime = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
-      const when = retryTime
-        ? (retryTime < 60 ? `in ${retryTime}s` : `in ${Math.ceil(retryTime/60)} min`)
-        : 'in a minute';
-      if (isImage) return `📸 Screenshot quota exceeded — try again ${when}. Text proofreading still works.`;
-      return `⏳ Quota exceeded — please try again ${when}.`;
+      if (isImage) return '📸 Screenshot quota exceeded — try again in a few minutes. Text proofreading still works.';
+      return '⏳ Quota exceeded — please try again in a few minutes.';
     }
     return null;
   }
@@ -49,9 +43,9 @@ export default async function handler(req, res) {
       const m = msg.toLowerCase();
       if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
         const retryMatch2 = msg.match(/retry[^\d]*([\d.]+)/i);
-      const rt = retryMatch2 ? Math.ceil(parseFloat(retryMatch2[1])) : null;
-      const wh = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
-      throw new Error(`📸 Screenshot quota exceeded — try again ${wh}. Text proofreading still works.`);
+      
+      
+      throw new Error('📸 Screenshot quota exceeded — try again in a few minutes. Text proofreading still works.');
       }
       throw new Error(msg);
     }
@@ -115,13 +109,13 @@ Output ONLY the final corrected text. No explanations, no labels.`;
     return d.candidates[0].content.parts[0].text.trim();
   }
 
-  async function fetchGroq() {
+  async function fetchGroqModel(model) {
     if (!groqKey) throw new Error('Groq key missing');
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'moonshotai/kimi-k2-instruct-0905',
+        model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: userPrompt   },
@@ -131,8 +125,13 @@ Output ONLY the final corrected text. No explanations, no labels.`;
       }),
     });
     const d = await r.json();
-    if (!r.ok || d.error) throw new Error(d.error?.message || 'Groq error');
+    if (!r.ok || d.error) throw new Error(d.error?.message || `Groq ${model} error`);
     return d.choices[0].message.content.trim();
+  }
+  async function fetchGroq() {
+    // Try Kimi K2 first, fall back to Llama 3.3 70B if unavailable
+    try { return await fetchGroqModel('moonshotai/kimi-k2-instruct-0905'); }
+    catch { return await fetchGroqModel('llama-3.3-70b-versatile'); }
   }
 
   try {

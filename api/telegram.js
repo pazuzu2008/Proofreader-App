@@ -92,11 +92,8 @@ export default async function handler(req, res) {
   function friendlyError(msg, isImage = false) {
     const m = String(msg).toLowerCase();
     if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-      const retryMatch = String(msg).match(/retry[^\d]*([\d.]+)/i);
-      const rt = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
-      const when = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
-      if (isImage) return `📸 Screenshot quota exceeded — try again ${when}. Voice and text still work.`;
-      return `⏳ Quota exceeded — please try again ${when}.`;
+      if (isImage) return '📸 Screenshot quota exceeded — try again in a few minutes. Voice and text still work.';
+      return '⏳ Quota exceeded — please try again in a few minutes.';
     }
     return null;
   }
@@ -224,10 +221,22 @@ Output ONLY the corrected result — no tags, no explanations.`;
     }
 
     try { return await tryGemini(); } catch (e) {
-      console.warn('Gemini failed, using Groq:', e.message);
+      console.warn('Gemini failed, using Groq Kimi:', e.message);
       try { return await tryGroq(); } catch (e2) {
-        const friendly = friendlyError(e.message) || friendlyError(e2.message);
-        throw new Error(friendly || ('All services failed: ' + e2.message));
+        // Try Llama as last resort
+        try {
+          const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: prompt.split('\n\n')[0] }, { role: 'user', content: text }], temperature: 0.3, max_tokens: 4096 }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error?.message || 'Llama error');
+          return d.choices[0].message.content.trim();
+        } catch (e3) {
+          const friendly = friendlyError(e.message) || friendlyError(e2.message) || friendlyError(e3.message);
+          throw new Error(friendly || ('All services failed: ' + e3.message));
+        }
       }
     }
   }
@@ -287,10 +296,7 @@ Output ONLY the corrected result — no tags, no explanations.`;
       // Always use screenshot-specific message for image quota errors
       const m = msg.toLowerCase();
       if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
-        const retryMatch = msg.match(/retry[^\d]*([\d.]+)/i);
-        const rt = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : null;
-        const when = rt ? (rt < 60 ? `in ${rt}s` : `in ${Math.ceil(rt/60)} min`) : 'in a minute';
-        throw new Error(`📸 Screenshot quota exceeded — try again ${when}. Voice and text still work.`);
+        throw new Error('📸 Screenshot quota exceeded — try again in a few minutes. Voice and text still work.');
       }
       throw new Error(msg);
     }
