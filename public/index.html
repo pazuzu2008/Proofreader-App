@@ -902,11 +902,11 @@ function stopSpeechPreview(){
     speechRec=null;
   }
   els.input.classList.remove('interim');
-  interimText='';
+  // NOTE: intentionally do NOT reset interimText here — handleRecordingDone needs it
 }
 async function startRecording(){
   if(isRecording) return;
-  interimText=els.input.value;
+  interimText=els.input.value; // save text that was there BEFORE recording — used to restore after Whisper
   try{
     micStream=await navigator.mediaDevices.getUserMedia({audio:true});
     const mimeType=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'].find(t=>MediaRecorder.isTypeSupported(t))||'';
@@ -928,7 +928,8 @@ function stopRecording(){
 }
 async function handleRecordingDone(mimeType){
   micBtn.disabled=true; setMicIcon(SPIN_IC);
-  const previewText=els.input.value;
+  // Save any text that was in the field BEFORE recording started (interimText was set to that in startRecording)
+  const textBeforeRecording = interimText; // set at recording start
   try{
     const ext=mimeType.includes('mp4')?'mp4':mimeType.includes('ogg')?'ogg':'webm';
     const blob=new Blob(audioChunks,{type:mimeType||'audio/webm'});
@@ -940,8 +941,8 @@ async function handleRecordingDone(mimeType){
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'Transcription failed');
     if(data.text){
-      const base=previewText.replace(interimText,'').trim();
-      els.input.value=base?base+' '+data.text:data.text;
+      // Replace whatever Web Speech preview wrote with the accurate Whisper result
+      els.input.value = textBeforeRecording ? textBeforeRecording+' '+data.text : data.text;
       autoResize(els.input); els.sendBtn.disabled=false; els.input.focus();
     }
   }catch(err){ alert('Transcription error: '+err.message); }
