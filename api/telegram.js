@@ -283,7 +283,12 @@ Output ONLY the corrected result — no tags, no explanations.`;
     const d = await r.json();
     if (!r.ok || d.error) {
       const msg = d.error?.message || 'Gemini Vision error';
-      throw new Error(friendlyError(msg) || msg);
+      // Always use screenshot-specific message for image quota errors
+      const m = msg.toLowerCase();
+      if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
+        throw new Error('📸 Screenshot quota exceeded — try again in a minute. Voice and text still work.');
+      }
+      throw new Error(msg);
     }
     return d.candidates[0].content.parts[0].text.trim();
   }
@@ -383,8 +388,9 @@ Output ONLY the corrected result — no tags, no explanations.`;
           if (statusId) await editHtml(chatId, statusId, '⚠️ No text found in image.');
           return res.status(200).json({ ok: true });
         }
-        // Show extracted text as msg 1
+        // Show extracted text as msg 1 — delete status first, then track it's gone
         if (statusId) await deleteMsg(chatId, statusId);
+        const deletedStatus = statusId; // keep ref but signal it's deleted
         const { effIn, effOut } = resolveLangs(extracted, { inLang: 'auto', outLang: settings.outLang });
         const flagIn  = effIn  === 'ru' ? '🇷🇺' : effIn  === 'uk' ? '🇺🇦' : '🇬🇧';
         const flagOut = effOut === 'ru' ? '🇷🇺' : effOut === 'uk' ? '🇺🇦' : '🇬🇧';
@@ -394,8 +400,8 @@ Output ONLY the corrected result — no tags, no explanations.`;
         const result = await proofread(extracted, effIn, effOut);
         await sendPlain(chatId, result);
       } catch (err) {
-        if (statusId) await editHtml(chatId, statusId, `❌ ${esc(err.message)}`);
-        else await sendHtml(chatId, `❌ ${esc(err.message)}`);
+        // Status may already be deleted — always send fresh error message
+        await sendHtml(chatId, `❌ ${esc(err.message)}`);
       }
       return res.status(200).json({ ok: true });
     }

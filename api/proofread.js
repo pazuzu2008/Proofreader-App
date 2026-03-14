@@ -40,7 +40,14 @@ export default async function handler(req, res) {
       }
     );
     const d = await r.json();
-    if (!r.ok || d.error) throw new Error(d.error?.message || 'Gemini extract error');
+    if (!r.ok || d.error) {
+      const msg = d.error?.message || 'Gemini extract error';
+      const m = msg.toLowerCase();
+      if (m.includes('quota') || m.includes('rate limit') || m.includes('429') || m.includes('exceeded')) {
+        throw new Error('📸 Screenshot quota exceeded — try again in a minute. Text proofreading still works.');
+      }
+      throw new Error(msg);
+    }
     return d.candidates[0].content.parts[0].text.trim();
   }
 
