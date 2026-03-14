@@ -536,7 +536,7 @@ let state = {
   loading: false,
 };
 let uploadedFileName=null, uploadedFileType=null, settingsOpen=false;
-let pastedImageBase64=null, pastedImageMime=null, pastedImageName=null;
+let pastedImageBase64=null, pastedImageMime=null, pastedImageName=null, pastedImageDataUrl=null;
 
 const els = {
   chatArea:       document.getElementById('chat-area'),
@@ -766,13 +766,15 @@ function renderChatHistory(){
   scrollBot(false);
 }
 
-function appendPair(input,output,ts,lang,fileName,animate=true){
+function appendPair(input,output,ts,lang,fileName,animate=true,imagePreview=null){
   els.emptyState.style.display='none';
   const tm=fmtTime(ts);
   const pair=document.createElement('div'); pair.className='msg-pair';
   pair.innerHTML=`
     <div class="msg-wrap user">
-      <div class="msg-bubble user">${esc(input)}</div>
+      <div class="msg-bubble user">${imagePreview
+        ? `<img src="${imagePreview}" style="max-width:220px;max-height:160px;border-radius:8px;display:block;">`
+        : esc(input)}</div>
       <div class="msg-footer user">
         <span class="msg-time">${tm}</span>
         <button class="msg-action" data-copy="${encodeURIComponent(input)}"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5"/></svg></button>
@@ -782,7 +784,7 @@ function appendPair(input,output,ts,lang,fileName,animate=true){
       <div class="msg-bubble bot">${esc(output)}</div>
       <div class="msg-footer">
         <span class="msg-time">${tm}</span>
-        ${fileName?`<button class="msg-action" data-download="${encodeURIComponent(output)}" data-filename="${encodeURIComponent(fileName)}"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 8l3 3 3-3"/><path d="M3 13h10"/></svg></button>`:''}
+        ${(fileName && /\.(docx|pdf)$/i.test(fileName))?`<button class="msg-action" data-download="${encodeURIComponent(output)}" data-filename="${encodeURIComponent(fileName)}"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 8l3 3 3-3"/><path d="M3 13h10"/></svg></button>`:''}
         <button class="msg-action" data-copy="${encodeURIComponent(output)}"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="1" width="9" height="11" rx="1.5"/><path d="M2 5a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 2 16h6a1.5 1.5 0 0 0 1.5-1.5"/></svg></button>
       </div>
     </div>`;
@@ -815,32 +817,49 @@ async function handleProofread(){
   state.loading=true; els.sendBtn.disabled=true;
   const inputText = isImage ? '📷 Screenshot' : text;
   const fname = uploadedFileName;
-  const imgB64  = pastedImageBase64, imgMime = pastedImageMime;
+  const imgB64  = pastedImageBase64, imgMime = pastedImageMime, imgPreview = pastedImageDataUrl;
   els.input.value=''; autoResize(els.input);
   uploadedFileName=null; uploadedFileType=null;
   pastedImageBase64=null; pastedImageMime=null; pastedImageName=null;
   renderFileBadge();
   const loadEl=appendLoading();
   try{
-    let body;
     if(isImage){
-      // Image mode: Gemini Vision extracts text + proofreads in one shot
-      const effOut = state.outLang==='same' ? 'auto' : state.outLang;
-      body = { imageBase64: imgB64, imageMime: imgMime, outLang: effOut,
-               formality: state.formality, lengthIdx: state.lengthIdx,
-               customCtx: state.customCtx };
+      // Image mode: step 1 — extract text, step 2 — proofread
+      const effOut = state.outLang==='same' ? '' : state.outLang;
+      const r1=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({imageBase64:imgB64, imageMime:imgMime, extractOnly:true})});
+      const d1=await r1.json();
+      if(!r1.ok) throw new Error(d1.error||'Server error');
+      loadEl.remove();
+      const extracted=d1.result;
+      const ts=Date.now();
+      // Show extracted text as first message
+      appendPair('📷 Screenshot', extracted, ts, 'auto', fname, true, imgPreview);
+      saveToHistory('📷 Screenshot', extracted, 'auto', fname);
+      // Step 2 — proofread extracted text
+      const loadEl2=appendLoading();
+      const effIn2=detectLang(extracted);
+      const effOutFinal=effOut||effIn2;
+      const {systemPrompt,userPrompt}=buildPrompt(extracted,effIn2,effOutFinal,state.formality,state.lengthIdx,state.customCtx);
+      const r2=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({systemPrompt,userPrompt,lang:effOutFinal})});
+      const d2=await r2.json();
+      if(!r2.ok) throw new Error(d2.error||'Server error');
+      loadEl2.remove();
+      const ts2=Date.now();
+      appendPair(extracted, d2.result, ts2, effIn2, null);
+      saveToHistory(extracted, d2.result, effIn2, null);
     } else {
       const { systemPrompt, userPrompt, effIn, effOut } = buildPrompt(text,state.inputLang,state.outLang,state.formality,state.lengthIdx,state.customCtx);
-      body = { systemPrompt, userPrompt, lang: effOut };
+      const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemPrompt,userPrompt,lang:effOut})});
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.error||'Server error');
+      loadEl.remove();
+      const ts=Date.now();
+      appendPair(text,data.result,ts,effIn,fname);
+      saveToHistory(text,data.result,effIn,fname);
     }
-    const res=await fetch('/api/proofread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Server error');
-    loadEl.remove();
-    const ts=Date.now();
-    const effIn2 = state.inputLang==='auto' ? detectLang(isImage?data.result:text) : state.inputLang;
-    appendPair(inputText,data.result,ts,effIn2,fname);
-    saveToHistory(inputText,data.result,effIn2,fname);
   }catch(err){
     loadEl.remove();
     const w=document.createElement('div'); w.className='msg-wrap bot';
@@ -872,7 +891,7 @@ function renderFileBadge(){
     els.fileBadgeWrap.innerHTML=`<div class="file-badge">${icon}${uploadedFileName}<button class="file-badge-remove" id="remove-file">×</button></div>`;
     document.getElementById('remove-file').addEventListener('click',()=>{
       uploadedFileName=null; uploadedFileType=null;
-      pastedImageBase64=null; pastedImageMime=null; pastedImageName=null;
+      pastedImageBase64=null; pastedImageMime=null; pastedImageName=null; pastedImageDataUrl=null;
       els.input.value=''; autoResize(els.input); els.sendBtn.disabled=true; els.fileBadgeWrap.style.display='none';
     });
   }else{ els.fileBadgeWrap.style.display='none'; }
@@ -891,6 +910,7 @@ document.addEventListener('paste', async e => {
   reader.onload = ev => {
     const dataUrl = ev.target.result;
     pastedImageBase64 = dataUrl.split(',')[1];
+    pastedImageDataUrl = dataUrl;
     pastedImageMime   = file.type || 'image/png';
     pastedImageName   = 'screenshot.png';
     uploadedFileName  = pastedImageName;

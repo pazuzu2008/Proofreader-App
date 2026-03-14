@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { systemPrompt, userPrompt, lang, imageBase64, imageMime, outLang, formality, lengthIdx, customCtx } = req.body;
+  const { systemPrompt, userPrompt, lang, imageBase64, imageMime, outLang, formality, lengthIdx, customCtx, extractOnly } = req.body;
 
   const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey   = process.env.GROQ_API_KEY;
@@ -9,6 +9,29 @@ export default async function handler(req, res) {
   const LANG_NAME = { en: 'English', ru: 'Russian', uk: 'Ukrainian', auto: '' };
   const FORMALITY_MAP = ['Formal — professional, polished.', 'Neutral — clear and natural.', 'Casual — friendly and conversational.'];
   const LENGTH_MAP    = ['Concise — trim redundancy.', 'Balanced — preserve original length.', 'Detailed — expand where useful.'];
+
+  // ── Extract only: OCR without proofreading ───────────────────────────────────
+  async function fetchGeminiExtract() {
+    if (!geminiKey) throw new Error('Gemini key missing');
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: 'Extract ALL text from the image exactly as written, preserving line breaks and structure. Output ONLY the extracted text, nothing else.' }] },
+          contents: [{ parts: [
+            { inline_data: { mime_type: imageMime || 'image/png', data: imageBase64 } },
+            { text: 'Extract all text from this image.' },
+          ]}],
+          generationConfig: { temperature: 0.1, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      }
+    );
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error?.message || 'Gemini extract error');
+    return d.candidates[0].content.parts[0].text.trim();
+  }
 
   // ── Image mode: Gemini Vision OCR + proofread in one shot ────────────────────
   async function fetchGeminiVision() {
@@ -90,7 +113,10 @@ Output ONLY the final corrected text. No explanations, no labels.`;
   try {
     // Image mode — Gemini Vision only (Groq doesn't support vision)
     if (imageBase64) {
-      const result = await fetchGeminiVision();
+      // extractOnly: just OCR, no proofread (frontend handles step 2 separately)
+      const result = extractOnly
+        ? await fetchGeminiExtract()
+        : await fetchGeminiVision();
       return res.status(200).json({ result });
     }
     // Text mode — Gemini primary, Groq fallback
