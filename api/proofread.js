@@ -153,7 +153,9 @@ Output ONLY the final corrected text. No explanations, no labels.`;
       }
     }
   } catch (err) {
-    const friendly = friendlyError(err.message);
-    return res.status(500).json({ error: friendly || ('Failed: ' + err.message) });
+    // Don't re-map if already a friendly message (starts with emoji)
+    const alreadyFriendly = err.message.startsWith('📸') || err.message.startsWith('⏳');
+    const friendly = alreadyFriendly ? null : friendlyError(err.message);
+    return res.status(500).json({ error: friendly || err.message });
   }
 }
