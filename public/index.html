@@ -168,33 +168,44 @@
     /* ── Mobile responsive ── */
     @media(max-width:600px){
       .app{max-width:100%;}
-      .header{padding:0 10px;height:48px;}
-      .header-title{font-size:13px;}
-      /* Shrink IO pills on mobile */
-      .io-pill{padding:2px 6px;font-size:10.5px;}
-      .io-control{gap:4px;margin-right:4px;}
-      .h-divider{margin:0 3px;}
-      /* Hide label row (IN/OUT text) on small screens */
+
+      /* Header: compress everything to fit */
+      .header{padding:0 8px;height:46px;gap:0;}
+      .header-title{display:none;} /* hide title text, keep logo */
+      .header-spacer{flex:0 0 4px;} /* minimal spacer */
+      .header-right{gap:1px;flex-shrink:0;}
+      .h-divider{margin:0 2px;}
+      .icon-btn{padding:5px;}
+
+      /* IO pills: tighter */
+      .io-control{gap:3px;margin-right:2px;}
       .io-label{display:none;}
-      .io-arrow{padding-top:0;}
+      .io-arrow{padding-top:0;font-size:11px;}
+      .io-pills{padding:2px 2px;}
+      .io-pill{padding:2px 5px;font-size:10px;}
+
       /* Chat */
-      .chat-area{padding:14px 12px 10px;}
-      .msg-bubble{max-width:88%;font-size:14px;}
-      /* Input */
-      .input-area{
-        padding:8px 10px;
-        padding-bottom:max(10px, env(safe-area-inset-bottom));
-      }
-      textarea#input-text{min-height:44px;font-size:14px;}
-      .input-box{padding:8px 10px 8px 13px;border-radius:12px;}
+      .chat-area{padding:12px 10px 8px;}
+      .msg-bubble{max-width:90%;font-size:13.5px;}
+
+      /* Input area — fixed at bottom, never overlaps */
+      .input-area{padding:8px 10px 8px;}
+      .input-box{padding:8px 10px 8px 12px;border-radius:12px;}
+      textarea#input-text{min-height:36px;max-height:120px;font-size:14px;}
+      .input-hint{display:none;}
+
       /* Settings */
-      .settings-panel.open{padding:14px 14px;}
-      .settings-label{width:72px;font-size:10.5px;}
+      .settings-panel.open{padding:12px;}
+      .settings-label{width:68px;font-size:10px;}
     }
-    /* iPhone safe area — always apply for notch/home bar */
-    .input-area{padding-bottom:max(14px, env(safe-area-inset-bottom, 14px));}
+
+    /* iOS keyboard fix — use dvh so layout reflows when keyboard opens */
+    @supports(height: 100dvh){
+      .app{height:100dvh;}
+    }
+    /* Safe area for notch/home bar */
     @supports(padding-bottom: env(safe-area-inset-bottom)){
-      .input-area{padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+      .input-area{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
     }
   </style>
 </head>
@@ -953,6 +964,21 @@ micBtn.addEventListener('pointermove',e=>{ if(!isRecording||isLocked) return; if
 micBtn.addEventListener('pointerup',()=>{ if(!isRecording||isLocked) return; stopRecording(); });
 micBtn.addEventListener('pointercancel',()=>{ if(isRecording&&!isLocked) stopRecording(); });
 micBtn.addEventListener('click',()=>{ if(isLocked) stopRecording(); });
+
+// ── iOS keyboard viewport fix ─────────────────────────────────────────────────
+// Safari on iOS doesn't resize the viewport when keyboard opens — fix with visualViewport
+if(window.visualViewport){
+  function onVPResize(){
+    const app=document.querySelector('.app');
+    if(window.innerWidth<=600){
+      app.style.height=window.visualViewport.height+'px';
+    } else {
+      app.style.height='';
+    }
+  }
+  window.visualViewport.addEventListener('resize', onVPResize);
+  window.visualViewport.addEventListener('scroll', onVPResize);
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 renderUI();      // renders IO pills, uilang dropdown, all labels
