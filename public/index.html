@@ -146,33 +146,23 @@
     .tool-btn{background:none;border:none;cursor:pointer;padding:5px;border-radius:7px;color:var(--text-muted);display:flex;align-items:center;transition:color .12s,background .12s;}
     .tool-btn:hover{color:var(--text);background:var(--surface2);}
     .tool-btn label{cursor:pointer;display:flex;align-items:center;}
-    /* ── Send / Mic shared action button (Telegram-style) ── */
-    .action-btn{
-      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      flex-shrink:0;transition:transform .12s,background .15s;
-      touch-action:none;user-select:none;-webkit-user-select:none;position:relative;
-    }
-    /* Mic state — ghost */
-    .action-btn.is-mic{background:none;color:var(--text-muted);}
-    .action-btn.is-mic:hover{color:var(--text);}
-    /* Send state — filled circle */
-    .action-btn.is-send{background:var(--active-bg);color:var(--active-text);}
-    .action-btn.is-send:hover{opacity:.88;}
-    .action-btn:active{transform:scale(.88);}
-    .action-btn:disabled{opacity:.3;cursor:not-allowed;}
-
-    /* Recording state — red pulsing */
-    .action-btn.recording,.action-btn.locked{background:#ef4444 !important;color:#fff !important;}
-    .action-btn.recording{animation:rec-pulse .9s ease-in-out infinite alternate;}
-    @keyframes rec-pulse{from{box-shadow:0 0 0 0 rgba(239,68,68,.5);}to{box-shadow:0 0 0 10px rgba(239,68,68,0);}}
-    .action-btn.locked{box-shadow:0 0 0 4px rgba(239,68,68,.25);}
-
-    .mic-lock-hint{position:absolute;bottom:calc(100% + 48px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;color:var(--text-muted);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;}
-    .action-btn.recording .mic-lock-hint{opacity:1;}
-    .action-btn.locked .mic-lock-hint{opacity:0;}
-
+    .send-btn{width:32px;height:32px;border-radius:9px;background:var(--send-bg);color:var(--send-text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s,transform .1s;flex-shrink:0;}
+    .send-btn:disabled{opacity:.25;cursor:not-allowed;}
+    .send-btn:not(:disabled):hover{opacity:.85;}
+    .send-btn:not(:disabled):active{transform:scale(.93);}
     .input-hint{text-align:center;font-size:10px;color:var(--text-muted);margin-top:6px;opacity:.45;letter-spacing:.01em;}
+
+    /* ── Mic ── */
+    .mic-btn{width:32px;height:32px;border-radius:50%;background:none;border:none;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none;position:relative;}
+    .mic-btn:hover{color:var(--text);}
+    .mic-btn.recording,.mic-btn.locked{color:#ef4444;}
+    .mic-btn:disabled{opacity:.3;cursor:not-allowed;}
+    .mic-btn.recording::before,.mic-btn.locked::before{content:'';position:absolute;inset:-5px;border-radius:50%;border:1.5px solid rgba(239,68,68,.4);animation:mic-ring 1.2s ease-out infinite;}
+    .mic-btn.recording::after,.mic-btn.locked::after{content:'';position:absolute;inset:-11px;border-radius:50%;border:1px solid rgba(239,68,68,.2);animation:mic-ring 1.2s ease-out infinite .3s;}
+    @keyframes mic-ring{0%{transform:scale(.85);opacity:.8;}100%{transform:scale(1.2);opacity:0;}}
+    .mic-lock-hint{position:absolute;bottom:calc(100% + 44px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:11px;color:var(--text-muted);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;}
+    .mic-btn.recording .mic-lock-hint{opacity:1;}
+    .mic-btn.locked .mic-lock-hint{opacity:0;}
     @keyframes spin{to{transform:rotate(360deg);}}
 
     /* ── Mobile responsive ── */
@@ -371,15 +361,17 @@
             <input type="file" accept=".docx,.pdf" id="file-input" style="display:none">
           </label>
         </div>
-        <!-- Single action button: mic when empty, send when text entered -->
-        <button class="action-btn is-mic" id="action-btn">
+        <button class="mic-btn" id="mic-btn">
           <span class="mic-lock-hint">↑ Slide up to lock</span>
-          <svg id="action-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg id="mic-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="2" width="6" height="13" rx="3"/>
             <path d="M5 10a7 7 0 0 0 14 0"/>
             <line x1="12" y1="19" x2="12" y2="22"/>
             <line x1="9" y1="22" x2="15" y2="22"/>
           </svg>
+        </button>
+        <button class="send-btn" id="send-btn" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         </button>
       </div>
     </div>
@@ -809,49 +801,20 @@ function appendLoading(){
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(Math.max(el.scrollHeight,72),200)+'px'; }
-els.input.addEventListener('input',()=>{ autoResize(els.input); updateActionBtn(); });
+els.input.addEventListener('input',()=>{ autoResize(els.input); els.sendBtn.disabled=state.loading||(!els.input.value.trim()&&!pastedImageBase64); });
 els.input.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     if(isMobile){ if(e.ctrlKey||e.metaKey){ e.preventDefault(); handleProofread(); } }
     else{ if(!e.shiftKey){ e.preventDefault(); handleProofread(); } }
   }
 });
-// ── Action button (mic ↔ send, Telegram-style) ────────────────────────────────
-const SEND_PATH = '<path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/>';
-const MIC_PATH  = '<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>';
-const SPIN_PATH = '<circle cx="12" cy="12" r="9" stroke-dasharray="28 56" stroke-width="1.7" style="transform-origin:center;animation:spin 0.8s linear infinite"/>';
-
-function updateActionBtn(forceDisabled = false) {
-  const btn  = document.getElementById('action-btn');
-  const icon = document.getElementById('action-icon');
-  if (!btn || !icon) return;
-  if (btn.classList.contains('recording') || btn.classList.contains('locked')) return;
-  const hasText = !!els.input.value.trim() || !!pastedImageBase64;
-  if (hasText && !forceDisabled) {
-    btn.classList.remove('is-mic'); btn.classList.add('is-send');
-    btn.disabled = state.loading;
-    icon.setAttribute('viewBox','0 0 24 24');
-    icon.innerHTML = SEND_PATH;
-  } else {
-    btn.classList.remove('is-send'); btn.classList.add('is-mic');
-    btn.disabled = forceDisabled || state.loading;
-    icon.setAttribute('viewBox','0 0 24 24');
-    icon.innerHTML = MIC_PATH;
-  }
-}
-
-// Click: send if in send mode
-document.getElementById('action-btn').addEventListener('click', e => {
-  const btn = document.getElementById('action-btn');
-  if (btn.classList.contains('is-send')) { handleProofread(); }
-  if (btn.classList.contains('locked'))  { stopRecording(); }
-});
+els.sendBtn.addEventListener('click',handleProofread);
 
 async function handleProofread(){
   const isImage = uploadedFileType === 'image' && pastedImageBase64;
   const text = els.input.value.trim();
   if((!text && !isImage) || state.loading) return;
-  state.loading=true; updateActionBtn(true);
+  state.loading=true; els.sendBtn.disabled=true;
   const inputText = isImage ? '📷 Screenshot' : text;
   const fname = uploadedFileName;
   const imgB64  = pastedImageBase64, imgMime = pastedImageMime, imgPreview = pastedImageDataUrl;
@@ -902,7 +865,7 @@ async function handleProofread(){
     const w=document.createElement('div'); w.className='msg-wrap bot';
     w.innerHTML=`<div class="msg-bubble bot" style="color:var(--danger)">${esc(err.message)}</div>`;
     els.chatArea.appendChild(w); scrollBot(true);
-  }finally{ state.loading=false; updateActionBtn(); }
+  }finally{ state.loading=false; els.sendBtn.disabled=!els.input.value.trim()&&!pastedImageBase64; }
 }
 
 // ── File upload ───────────────────────────────────────────────────────────────
@@ -982,8 +945,10 @@ els.chatArea.addEventListener('click',async e=>{
 });
 
 // ── Voice ─────────────────────────────────────────────────────────────────────
-const micBtn=document.getElementById('action-btn');
-function setMicIcon(h){ document.getElementById('action-icon').innerHTML=h; }
+const micBtn=document.getElementById('mic-btn');
+const MIC_ICON=`<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/>`;
+const SPIN_IC=`<circle cx="12" cy="12" r="9" stroke-dasharray="28 56" stroke-width="1.7" style="transform-origin:center;animation:spin 0.8s linear infinite"/>`;
+function setMicIcon(h){ document.getElementById('mic-icon').innerHTML=h; }
 
 let mediaRecorder=null,audioChunks=[],isRecording=false,isLocked=false,micStream=null,holdStartY=0;
 const LOCK_THRESHOLD=60;
@@ -1045,7 +1010,7 @@ async function startRecording(){
     audioChunks=[];
     mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
     mediaRecorder.onstop=()=>handleRecordingDone(mimeType);
-    mediaRecorder.start(); isRecording=true; micBtn.classList.add('recording'); micBtn.classList.remove('is-mic','is-send');
+    mediaRecorder.start(); isRecording=true; micBtn.classList.add('recording');
     startSpeechPreview();
   }catch(err){
     if(err.name==='NotAllowedError') alert('Microphone access denied.');
@@ -1055,10 +1020,10 @@ async function startRecording(){
 function stopRecording(){
   if(!isRecording||!mediaRecorder) return;
   stopSpeechPreview(); mediaRecorder.stop(); micStream?.getTracks().forEach(t=>t.stop());
-  isRecording=false; isLocked=false; micBtn.classList.remove('recording','locked'); updateActionBtn();
+  isRecording=false; isLocked=false; micBtn.classList.remove('recording','locked');
 }
 async function handleRecordingDone(mimeType){
-  micBtn.disabled=true; setMicIcon(SPIN_PATH);
+  micBtn.disabled=true; setMicIcon(SPIN_IC);
   // Save any text that was in the field BEFORE recording started (interimText was set to that in startRecording)
   const textBeforeRecording = interimText; // set at recording start
   try{
@@ -1077,25 +1042,13 @@ async function handleRecordingDone(mimeType){
       autoResize(els.input); els.sendBtn.disabled=false; els.input.focus();
     }
   }catch(err){ alert('Transcription error: '+err.message); }
-  finally{ micBtn.disabled=false; setMicIcon(MIC_PATH); interimText=''; updateActionBtn(); }
+  finally{ micBtn.disabled=false; setMicIcon(MIC_ICON); interimText=''; }
 }
-micBtn.addEventListener('pointerdown', async e => {
-  if (micBtn.disabled) return;
-  // Only start mic if button is in mic mode
-  const btn = document.getElementById('action-btn');
-  if (btn.classList.contains('is-send')) return; // handled by click
-  e.preventDefault();
-  holdStartY = e.clientY;
-  micBtn.setPointerCapture(e.pointerId);
-  // Show recording state IMMEDIATELY before getUserMedia delay
-  micBtn.classList.remove('is-mic','is-send');
-  micBtn.classList.add('recording');
-  await startRecording();
-});
-micBtn.addEventListener('pointermove',e=>{ if(!isRecording||isLocked) return; if((holdStartY-e.clientY)>=LOCK_THRESHOLD){ isLocked=true; micBtn.classList.remove('recording'); micBtn.classList.add('locked'); } });
+micBtn.addEventListener('pointerdown',async e=>{ if(micBtn.disabled) return; e.preventDefault(); holdStartY=e.clientY; micBtn.setPointerCapture(e.pointerId); await startRecording(); });
+micBtn.addEventListener('pointermove',e=>{ if(!isRecording||isLocked) return; if((holdStartY-e.clientY)>=LOCK_THRESHOLD){ isLocked=true; micBtn.classList.replace('recording','locked'); } });
 micBtn.addEventListener('pointerup',()=>{ if(!isRecording||isLocked) return; stopRecording(); });
 micBtn.addEventListener('pointercancel',()=>{ if(isRecording&&!isLocked) stopRecording(); });
-// click handled by unified action-btn click listener above
+micBtn.addEventListener('click',()=>{ if(isLocked) stopRecording(); });
 
 // ── iOS keyboard viewport fix ─────────────────────────────────────────────────
 // Scroll chat to bottom when keyboard opens so last message stays visible
@@ -1109,7 +1062,6 @@ if(window.visualViewport){
 renderUI();      // renders IO pills, uilang dropdown, all labels
 initSliders();
 renderChatHistory();
-updateActionBtn();
 </script>
 </body>
 </html>
